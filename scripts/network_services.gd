@@ -109,6 +109,7 @@ func reserve() -> void:
 	for p in targets:
 		if not g.roads[p].get("reserve",false): enable=true; break
 	invalidate_undo(targets)
+	g.gameplay.upkeep_revision=-1
 	for p in targets:
 		g.roads[p].reserve=enable
 		g.roads[p].player_modified=true

@@ -121,9 +121,12 @@ func run() -> void:
 	assert(g.incidents.roundabouts.has(g.cursor) and g.services.can_undo())
 	g.services.undo_build();assert(not g.incidents.roundabouts.has(g.cursor) and g.roads.has(g.cursor) and g.roads[g.cursor].closed)
 	# Before/after reports require both a measurement window and completed trips.
-	fixture();g.gameplay.samples=[{"at":0,"duration":50.0,"delay":40.0,"fare":10.0}]
+	fixture();g.gameplay.samples=[]
+	for i in 5: g.gameplay.samples.append({"at":0,"duration":50.0,"delay":40.0,"fare":10.0})
 	g.gameplay.begin_review("Semáforo");g.elapsed=61;g.gameplay.finish_review();assert(g.gameplay.improvements.is_empty())
-	g.trips=5;g.gameplay.samples=[{"at":61,"duration":20.0,"delay":10.0,"fare":10.0}];g.gameplay.finish_review()
+	g.trips=5;g.gameplay.samples=[]
+	for i in 5: g.gameplay.samples.append({"at":61,"duration":20.0,"delay":10.0,"fare":10.0})
+	g.gameplay.finish_review()
 	assert(g.gameplay.improvements[0].after.delay<g.gameplay.improvements[0].before.delay)
 	# Legacy saves migrate to free mode with profiles, without resetting the ledger.
 	g.save_game(false)
@@ -146,6 +149,12 @@ func run() -> void:
 	assert(not g.gameplay.scenario_result.ranked and g.gameplay.scores==saved_scores)
 	g.gameplay.scores.clear();g.gameplay.load_scores();assert(g.gameplay.scores==saved_scores)
 	g.gameplay_ui.action("play:continue");assert(g.gameplay.mode=="free" and not g.gameplay.scenario_done)
+	g.selected_scenario="winter";g.start_new_session()
+	assert(g.world_seed==71129 and g.money==30000 and g.incidents.rules.weather_interval==90 and g.gameplay.weather_kind()=="snow")
+	g.reset_armed=true;g.new_game()
+	assert(g.money==30000 and g.accounts.opening==30000 and g.incidents.rules.weather_interval==90)
+	g.save_game(false);assert(g.load_game())
+	assert(g.gameplay.scenario_id=="winter" and not g.gameplay.scenario_done and g.incidents.rules.weather_interval==90)
 	for path in [g.save_path,g.gameplay.records_path]: DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	print("PASS: contracts, every unlock tier, profiles/peaks, connection grace, upkeep and route income, reversible construction/roundabouts, partial/closed/auto maintenance, saved jobs, reserves, safe detours, emergency response, improvement feedback, v2 migration, seeded scenarios, deadlines, scores, cheat exclusion and replay")
 	g.free();quit()

@@ -147,6 +147,7 @@ func draw() -> void:
 		tooltip_rect = Rect2()
 		draw_panel()
 	else: draw_tooltip()
+	g.event_notices.draw(self)
 
 func draw_title() -> void:
 	draw_title_map()
@@ -169,10 +170,10 @@ func draw_title() -> void:
 			var color = INK if g.title_index==i else PAPER
 			text(area.position + Vector2(18, 29), labels[i], 18, color)
 			if g.title_index == i: text(area.position + Vector2(286, 30), "→", 21, color)
-	var detail = "Crea una nueva región y empieza con 80.000 €."
+	var detail = "Nueva región · Presupuesto: "+g.cash(g.gameplay_ui.starting_money())
 	if g.title_index==1: detail = "Recupera tu región, sus carreteras y sus viajes."
 	elif g.title_index==2: detail = "Hasta la próxima conexión."
-	if not g.title_has_save and g.title_index==0: detail = "Empieza tu primera región con 80.000 €."
+	if not g.title_has_save and g.title_index==0: detail = "Empieza con "+g.cash(g.gameplay_ui.starting_money())
 	text(Vector2(66, 694), detail, 13, MUTED)
 	if g.title_message != "": text(Vector2(66, 720), g.title_message, 13, Color("efac95"))
 	elif not g.title_has_save: text(Vector2(66, 720), "Todavía no hay una partida guardada.", 13, MUTED)
@@ -562,6 +563,13 @@ func draw_tool_icon(icon: String, at: Vector2, color: Color) -> void:
 			for y in [-12,0,12]: rect(Rect2(at+Vector2(-18,y-2),Vector2(36,4)),color)
 
 func draw_jobs() -> void:
+	for p in g.services.service_jobs:
+		var job = g.services.service_jobs[p]
+		var area = tile_area(p)
+		if not area.intersects(WORLD): continue
+		canvas.draw_rect(area.grow(-1),Color("efbe70"),false,2)
+		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x,4)),INK)
+		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x*(1-job.left/job.total),4)),Color("efbe70"))
 	for p in g.maintenance.jobs:
 		var job = g.maintenance.jobs[p]
 		var area = tile_area(p)
@@ -839,7 +847,7 @@ func draw_tooltip() -> void:
 	var lines: Array = []
 	var status = "DEMOLIENDO" if road.get("demolishing",false) else ("EN OBRAS" if road.work > 0 else ("CERRADA" if road.closed else "ABIERTA"))
 	lines.append(status + (" · Rotonda 3×3" if is_roundabout else ""))
-	lines.append(str(spec.lanes) + " carriles · " + str(g.density.get(actual,0)) + "/" + str(spec.cap) + " coches")
+	lines.append(str(spec.lanes) + " carriles · " + str(g.density.get(actual,0)) + "/" + str(g.traffic.capacity(actual)) + " coches")
 	lines.append("Conservación " + str(int(road.hp)) + "% · " + str(int(spec.speed*15)) + " km/h")
 	lines.append("Accidentes " + str(int(round(g.incidents.risk(actual)*100))) + "%% cada %.1f s" % g.incidents.ACCIDENT_INTERVAL)
 	if g.incidents.fire.has(actual) or g.incidents.snow.has(actual):
@@ -852,6 +860,10 @@ func draw_tooltip() -> void:
 		var unused = g.incidents.unused_seconds(actual)
 		lines.append("Sin uso: " + str(int(unused)) + " s · Abandono: %.1f s" % g.incidents.rules.unused_start)
 		if g.incidents.fade(actual) > 0: lines.append("Desapareciendo " + str(int(g.incidents.fade(actual)*100)) + "%")
+	if road.get("reserve",false): lines.append("Reserva · Protegida del abandono")
+	if g.services.service_jobs.has(actual):
+		var job = g.services.service_jobs[actual]
+		lines.append("Mantenimiento %s: %.1f s"%["parcial" if job.partial else "con cierre",job.left])
 	if road.work > 0: lines.append("Obra pendiente: %.1f s" % road.work)
 	var has_signal = g.incidents.signals.has(actual)
 	var height = 51 + lines.size()*23 + (42 if has_signal else 0)

@@ -25,6 +25,7 @@ func _init(game) -> void:
 	g = game
 
 func reset() -> void:
+	if g.event_notices!=null: g.event_notices.reset()
 	rules = Settings.incident_rules()
 	snow.clear()
 	fire.clear()
@@ -128,7 +129,7 @@ func snow_zone(center: Vector2i, radius: int, duration: float = -1) -> void:
 		for x in range(-radius, radius + 1):
 			var p = center + Vector2i(x, y)
 			if g.inside(p) and Vector2(x, y).length() <= radius + 0.3: snow[p] = end
-	g.tell("Zona nevada · Riesgo +%d %% · J / menú para localizar" % roundi(Settings.SNOW_ACCIDENT_RISK*100))
+	g.event_notices.push("snow",center,"Nieve en la zona · Riesgo de accidentes +%d %%"%roundi(Settings.SNOW_ACCIDENT_RISK*100))
 
 func ignite(p: Vector2i, duration: float = -1) -> void:
 	if not g.inside(p): return
@@ -136,7 +137,7 @@ func ignite(p: Vector2i, duration: float = -1) -> void:
 	var life: float = rules.fire_duration if duration < 0 else duration
 	fire[p] = g.elapsed + life
 	zones.append({"cells":[p], "until":g.elapsed + life, "clock":0.0})
-	g.tell("Incendio detectado · Riesgo +%d %% · J / menú para localizar" % roundi(Settings.FIRE_ACCIDENT_RISK*100))
+	g.event_notices.push("fire",p,"El fuego se está extendiendo por la zona")
 
 func spread_fire(zone: Dictionary) -> void:
 	var candidates: Array = []
@@ -176,6 +177,8 @@ func accident(car: Dictionary, p: Vector2i, dt: float) -> bool:
 			g.transact(-ACCIDENT_COST,"accidents","Accidente de tráfico")
 			accidents += 1
 			accident_losses += ACCIDENT_COST
+			last_alert=p
+			g.event_notices.push("accident",p,"Vehículo detenido %.0f s · Coste %s"%[ACCIDENT_STOP,g.cash(ACCIDENT_COST)])
 			g.money_popups.append({"amount":-ACCIDENT_COST, "pos":Vector2(p), "age":0.0, "offset":0})
 			if g.money_popups.size() > 96: g.money_popups.pop_front()
 			return true
@@ -207,7 +210,7 @@ func edge_allows(p: Vector2i, q: Vector2i) -> bool:
 	return true
 
 func snapshot() -> Dictionary:
-	return {"sentinel_version":1,"snow":snow, "fire":fire, "zones":zones, "signals":signals, "roundabouts":roundabouts, "roundabout_cells":roundabout_cells, "accidents":accidents, "losses":accident_losses, "clock":weather_clock, "rules":rules, "last_alert":last_alert}
+	return {"sentinel_version":1,"snow":snow, "fire":fire, "zones":zones, "signals":signals, "roundabouts":roundabouts, "roundabout_cells":roundabout_cells, "accidents":accidents, "losses":accident_losses, "clock":weather_clock, "rules":rules, "last_alert":last_alert,"notices":g.event_notices.snapshot()}
 
 func restore(data: Dictionary) -> void:
 	reset()
@@ -220,6 +223,7 @@ func restore(data: Dictionary) -> void:
 	accidents = data.get("accidents", 0)
 	accident_losses = data.get("losses", 0.0)
 	weather_clock = data.get("clock", 0.0)
+	g.event_notices.restore(data.get("notices",{}))
 	last_alert = data.get("last_alert",g.NO_CELL)
 	if not data.has("sentinel_version") and last_alert==Vector2i(-1,-1): last_alert=g.NO_CELL
 	# Estos dos parámetros no se incluían en los guardados anteriores.

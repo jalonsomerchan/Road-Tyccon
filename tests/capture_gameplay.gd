@@ -32,5 +32,8 @@ func run() -> void:
 	g.open_panel("catalog");await shot("catalog")
 	g.open_panel("cities");await shot("cities")
 	g.open_panel("accounts");await shot("accounts")
+	g.close_panels();g.roads[g.cursor].hp=35
+	g.services.repair([g.cursor],true);g.services.reserve();g.services.update(2)
+	await shot("maintenance")
 	print("PASS: title/mode selector, objectives and controller focus, expanded menu, world overlays, services, car inspection, economy, scenario confirmation, locked catalog, profiles and ledger rendered")
 	g.free();quit()

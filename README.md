@@ -2,6 +2,54 @@
 
 Tycoon cenital pixel art para Godot 4.7.2, con teclado y mando. Abre `project.godot` y ejecuta con F5.
 
+## Objetivos, progresión y gestión de la red
+
+La pantalla inicial permite elegir con **X** (o su botón) entre **Progresión**, **Libre** y tres escenarios. Progresión empieza con tierra, carretera local, puente de madera y caminos forestal/agrícola. Los contratos dan dinero y reputación: los niveles de **20, 80 y 180** puntos desbloquean sucesivamente vías secundarias, autovías y grandes autopistas. Libre y los escenarios tienen el catálogo completo. Las partidas v2 anteriores se cargan en Libre, conservando dinero, carreteras, vehículos y contabilidad.
+
+**Objetivos (K)** muestra tres contratos simultáneos: conectar ciudades, completar viajes y completar viajes con una demora de hasta diez segundos frente al tiempo de referencia. Se cobra cada hito una sola vez; después aparece uno mayor. Conectar una ciudad y completar contratos genera una celebración. Las intervenciones realizadas con al menos cinco viajes de referencia se comparan después de 60 segundos y cinco nuevos viajes; se muestran la demora y la cola antes/después. La comparación refleja el tráfico observado, que también puede cambiar con la demanda.
+
+Cada ciudad tiene un perfil persistente. Las dos iniciales son residencial e industrial; las demás reciben su perfil de forma determinista:
+
+| Perfil | Demanda y recompensa |
+| --- | --- |
+| Residencial | Demanda ×1,8 en las fases 2, 3, 7 y 8 del ciclo de diez minutos; ×0,8 fuera de ellas. |
+| Industrial | Demanda ×1,25 en las fases 2–8 y ×0,6 fuera de ellas; vehículos ×0,8 de velocidad y ×1,4 de tarifa. |
+| Turística | Demanda ×1,6 en las fases 0, 1, 8 y 9; ×0,7 el resto; tarifa ×1,25. |
+| Agrícola | Demanda ×2 durante la cosecha (una fase de cinco minutos de cada cuatro); ×0,7 el resto; tarifa ×1,2. |
+
+Los multiplicadores se aplican a la demanda por población, conservando las fracciones para futuras salidas. La primera conexión garantiza una salida inicial. Los destinos se ponderan por población y complementariedad entre perfiles. El límite de vehículos visibles sigue siendo 350; la demanda adicional permanece en cola. Una ciudad que aún no ha entrado en la red no pierde habitantes por falta de viajes; al conectarse empieza su plazo de gracia.
+
+**Red y servicios**, dentro del menú, tiene tres pestañas accesibles con ratón, flechas y mando:
+
+- **Tramos y mantenimiento:** elige desde el cursor hasta los cruces (hasta 2.048 casillas), repara el tramo o contrata mantenimiento automático por debajo del 35, 55 o 75 %. La reparación con cierre cuesta el porcentaje configurado y devuelve la vía a su estado de apertura anterior. La parcial cuesta ×1,5 y tarda el doble: mantiene el paso con capacidad al 50 % y velocidad al 55 %. Los trabajos y su progreso se guardan. Las vías municipales sin modificar quedan fuera del mantenimiento automático.
+- **Tráfico y emergencias:** capas de congestión, conservación y rentabilidad estimada; diagnóstico con botón para ir al punto; selección de vehículos con ruta, destino y causa de parada. **C** o **Ctrl+clic** abre la inspección; **L** alterna capas. La previsión muestra el próximo fenómeno y su cuenta atrás. Bomberos (250 €) y quitanieves (180 €) despejan efectos en un radio de doce casillas alrededor del cursor; los bomberos eliminan también las fuentes de propagación extinguidas. Los eventos priorizan las vías del jugador.
+- **Economía:** conservación por minuto, ingresos recientes de viajes, caja prevista a cinco minutos y comparación paginada de conexiones. Las vías del jugador cuestan el **0,08 % de su precio de construcción por minuto simulado**; las calles municipales sin modificar no generan ese gasto. Una ruta muestra el coste completo de sus vías, por lo que sus márgenes sirven para comparar y no deben sumarse cuando comparten tramos. La capa de rentabilidad distribuye el ingreso de cada viaje por sus casillas recorridas. La previsión excluye contratos, devoluciones, nuevas obras, accidentes y reparaciones futuras.
+
+Una vía marcada como **reserva** no desaparece por desuso y paga un 35 % adicional de conservación. **Construir desvío temporal** marca el siguiente tramo para retirarse a los cinco minutos; espera hasta que esté vacío y sin obras. **Ctrl+Z** devuelve el importe de la última construcción durante los primeros 60 segundos, siempre que no haya sido utilizada ni modificada; también revierte rotondas y restaura sus vías anteriores. Los cierres y mejoras normales conservan sus controles habituales.
+
+**Escenarios** ofrece semillas fijas y resultados locales:
+
+| Escenario | Duración simulada | Presupuesto | Objetivo |
+| --- | --- | --- | --- |
+| Pueblos con presupuesto | 15 min | 12.000 € | 120 viajes |
+| Invierno en la región | 20 min | 30.000 € | 180 viajes; nevadas cada 90 s |
+| La gran conexión | 30 min | 45.000 € | 6 ciudades conectadas |
+
+Además del objetivo, hay que terminar con caja no negativa. Al vencer el plazo se pausa la simulación y se presenta el resultado. La puntuación considera viajes, conexiones, caja, accidentes y demora. El mejor resultado por escenario se guarda aparte de la partida; usar trucos desactiva el récord de esa sesión. Se puede repetir un reto o continuar la región en Libre. Preparar un escenario desde el menú muestra su presupuesto y objetivo y exige pulsar **Iniciar el reto seleccionado** antes de reemplazar la sesión.
+
+Los nuevos estados se incluyen en el guardado v2 con valores por defecto para partidas anteriores. Los contratos, trabajos y resultados se conservan al cargar. El historial de muestras se limita a 256 viajes y las comparaciones a seis intervenciones.
+
+Verificación de las nuevas mecánicas y regresiones en un proyecto aislado:
+
+```sh
+python3 tools/run_checks.py /Applications/Godot.app/Contents/MacOS/Godot
+python3 tests/check_settings_overrides.py /Applications/Godot.app/Contents/MacOS/Godot
+# Capturas y navegación sobre una sesión gráfica de prueba:
+godot --path . --script tests/capture_gameplay.gd -- --test-mode --title-screen
+```
+
+La batería histórica usa una región de 2.048 casillas para sus 400 ciudades y ejecuta también las nuevas mecánicas con la configuración real del proyecto. El ajuste local actual de 1.024 casillas no permite albergar las 400 ciudades solicitadas con 100 casillas de separación; el generador conserva su aviso y crea las que caben, sin cambiar esos ajustes del usuario.
+
 ## Pantalla de inicio
 
 Al abrir el juego aparecen **Nueva partida**, **Cargar partida** y **Salir**. La simulación no empieza ni genera la región hasta elegir Nueva o Cargar. Cargar está desactivado si no hay guardado; los archivos incompatibles muestran un mensaje y mantienen la pantalla inicial.
@@ -33,6 +81,8 @@ El plano parte de una sola calle principal y añade un cruce, un ramal o una peq
 Al crecer o reducirse, la ciudad sincroniza su plano y retira los tramos automáticos sobrantes. Las vías generadas guardan su procedencia para distinguirlas de las construcciones y modificaciones del jugador. Al cargar ciudades del primer generador urbano se limpia la malla automática antigua; se conservan las conexiones a carreteras exteriores, sus corredores de acceso, obras, cierres y semáforos. Un coche sobre un tramo automático retirado se traslada a la calle urbana más cercana manteniendo su viaje. Las calles urbanas generadas y los accesos están protegidos frente al abandono, y su demolición explícita se conserva al cargar. Las partidas antiguas reciben calles transitables; un coche guardado sobre un antiguo edificio decorativo se sitúa en la calle más cercana de su ciudad, conservando destino e identidad.
 
 ## Accidentes, clima y abandono
+
+Los incendios, nevadas y accidentes muestran un aviso con su ubicación. **A / Enter** lleva al evento; **B / Esc** descarta únicamente el aviso. Funciona con mando, teclado y botones de ratón, también sobre los menús. Los avisos permanecen hasta atenderlos y se presentan en orden; los sucesos repetidos de un mismo tipo y casilla se agrupan. Se conservan al guardar y cargar. Al ir al evento se mantiene el inicio de construcción pendiente; al descartar, se conserva el menú y la selección.
 
 Cada uno de los 24 tipos tiene **nueve sprites adicionales**, manteniendo sus materiales y carriles: ardiendo, nevado, estropeado, muy estropeado, estropeadísimo, cortado, desapareciendo, rotonda y semáforo. Son 216 sprites adicionales; las rotondas miden 192×192 píxeles para su huella de 3×3. Hay también cuatro fotogramas de incendio y cuatro variantes de nieve. Los originales y prompts de ImageGen están en `assets/source/road-conditions/` y `assets/source/environment/`; los PNG de juego en las carpetas equivalentes de `assets/sprites/`.
 

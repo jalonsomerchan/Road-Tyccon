@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - "v*"
+
   workflow_dispatch:
 
 permissions:
@@ -12,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    name: Compilar y publicar juego
     runs-on: ubuntu-latest
 
     steps:
@@ -22,32 +24,99 @@ jobs:
         env:
           GODOT_VERSION: "4.7.2"
         run: |
-          wget -q "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          sudo install "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          set -e
 
-          wget -q "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          unzip -q "Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -d /tmp/godot-templates
-          cp /tmp/godot-templates/templates/* "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+          wget -q \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
 
-      - name: Exportar Linux
+          unzip -q \
+            "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+
+          sudo install \
+            "Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            /usr/local/bin/godot
+
+          wget -q \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+
+          mkdir -p \
+            "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+
+          unzip -q \
+            "Godot_v${GODOT_VERSION}-stable_export_templates.tpz" \
+            -d /tmp/godot-templates
+
+          cp /tmp/godot-templates/templates/* \
+            "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+
+          godot --version
+
+      - name: Importar recursos del proyecto
         run: |
-          mkdir -p build
           godot --headless --path . --import
-          godot --headless --path . --export-release "Linux" build/MiJuego.x86_64
+
+      - name: Exportar juego para Steam Deck
+        run: |
+          set -e
+
+          mkdir -p build
+
+          godot --headless \
+            --path . \
+            --export-release "Linux" \
+            build/MiJuego.x86_64
+
           test -s build/MiJuego.x86_64
+
           chmod +x build/MiJuego.x86_64
 
-      - name: Empaquetar
+          echo "Exportación completada:"
+          ls -lah build/
+
+      - name: Empaquetar juego
         run: |
+          set -e
+
           cd build
+
           zip -q -r ../steamdeck.zip .
 
-      - name: Publicar versión
+          cd ..
+
+          sha256sum steamdeck.zip > steamdeck.zip.sha256
+
+          echo "Archivos generados:"
+          ls -lah steamdeck.zip steamdeck.zip.sha256
+
+          echo "Verificando integridad:"
+          sha256sum -c steamdeck.zip.sha256
+
+      - name: Determinar versión
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=dev-${RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar en GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" steamdeck.zip \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes
+          set -e
+
+          gh release create "$RELEASE_TAG" \
+            steamdeck.zip \
+            steamdeck.zip.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_TAG" \
+            --generate-notes \
+            --latest
+
+          echo "Release publicada: $RELEASE_TAG"

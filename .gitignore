@@ -17,3 +17,10 @@ tests/expanding_save.bin
 build/
 dist/
 *.tmp
+
+# Gameplay validation saves and local leaderboard fixtures
+tests/gameplay_save.bin
+tests/gameplay_scores.bin
+tests/test_scores.bin
+
+tests/event_notices_save.bin

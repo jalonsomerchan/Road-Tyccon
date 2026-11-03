@@ -24,6 +24,8 @@ var review: Dictionary = {}
 var improvements: Array = []
 var sample_clock = 0.0
 var upkeep_clock = 0.0
+var upkeep_revision = -1
+var upkeep_cached = 0.0
 var monitor_clock = 0.0
 var alert_cell = Vector2i.ZERO
 var alert_text = ""
@@ -57,6 +59,7 @@ func reset(new_mode: String = "free", scenario: String = "") -> void:
 	improvements.clear()
 	sample_clock = 0
 	upkeep_clock = 0
+	upkeep_revision = -1
 	monitor_clock = 0
 	alert_text = ""
 	alert_cell = g.NO_CELL
@@ -185,21 +188,26 @@ func trip_completed(car: Dictionary, fare: float) -> void:
 	route.duration+=car.age
 	route.delay+=delay
 
-func metrics() -> Dictionary:
+func metrics(after_time: float = -1.0) -> Dictionary:
 	var duration = 0.0
 	var delay = 0.0
+	var count = 0
 	for entry in samples:
+		if entry.at<=after_time: continue
+		count+=1
 		duration+=entry.duration
 		delay+=entry.delay
-	return {"duration":duration/maxi(1,samples.size()),"delay":delay/maxi(1,samples.size()),"queue":g.traffic.queued,"count":samples.size(),"trips":g.trips}
+	return {"duration":duration/maxi(1,count),"delay":delay/maxi(1,count),"queue":g.traffic.queued,"count":count,"trips":g.trips}
 
 func begin_review(label: String) -> void:
+	if samples.size()<5: return
 	if review.is_empty(): review={"label":label,"before":metrics(),"at":g.elapsed}
 	else: review.label=label
 
 func finish_review() -> void:
 	if review.is_empty() or g.elapsed-review.at<60 or g.trips-review.before.trips<5: return
-	var after = metrics()
+	var after = metrics(review.at)
+	if after.count<5: return
 	var entry = {"label":review.label,"before":review.before,"after":after,"at":g.elapsed}
 	improvements.push_front(entry)
 	if improvements.size()>6: improvements.pop_back()
@@ -212,12 +220,15 @@ func is_player_road(p: Vector2i) -> bool:
 	return not road.has("generated_city") and not road.has("urban_city") and not road.has("access_city")
 
 func upkeep_per_minute() -> float:
+	if not g.graph_dirty and upkeep_revision==g.road_revision: return upkeep_cached
 	var cost = 0.0
 	for p in g.roads:
 		var road = g.roads[p]
 		# Solo infraestructura del jugador; las calles municipales son gratuitas.
 		if not is_player_road(p): continue
 		cost += g.Catalog.ROADS[road.kind].cost*0.0008*(1.35 if road.get("reserve",false) else 1.0)
+	upkeep_cached=cost
+	upkeep_revision=g.road_revision if not g.graph_dirty else -1
 	return cost
 
 func income_per_minute() -> float:

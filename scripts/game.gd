@@ -43,6 +43,7 @@ var tile = 32.0
 var zoom_target = 32.0
 var visuals
 var incidents
+var event_notices
 var traffic
 var accounts
 var maintenance
@@ -118,6 +119,7 @@ func _ready() -> void:
 	Engine.max_fps = 60
 	font = ThemeDB.fallback_font
 	incidents = preload("res://scripts/incidents.gd").new(self)
+	event_notices = preload("res://scripts/event_notices.gd").new(self)
 	traffic = preload("res://scripts/traffic_sim.gd").new(self)
 	accounts = preload("res://scripts/accounts.gd").new()
 	maintenance = preload("res://scripts/maintenance.gd").new(self)
@@ -234,6 +236,7 @@ func add_city(pos: Vector2i, title: String, radius: int = WorldSettings.NEW_CITY
 	cities.append({"pos":pos, "name":title, "radius":radius, "pop":(radius - 1) * WorldSettings.POPULATION_PER_RADIUS + WorldSettings.CITY_BASE_POPULATION, "received":0, "recent":0, "access_dirs":[first_direction], "accesses":[]})
 	explored.reveal(Vector2(pos),Vector2.ONE*(radius+5))
 	gameplay.prepare_cities()
+	if cities.size()<=2: cities.back().profile=cities.size()-1
 	clear_city_plot(cities.back())
 	if not building_world:
 		rebuild_city_lookup()
@@ -357,7 +360,8 @@ func _process(delta: float) -> void:
 	var move = Vector2i.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): move.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): move.y += 1
-	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT): move.x -= 1
+	if not Input.is_physical_key_pressed(KEY_A): event_notices.suppress_a=false
+	if (Input.is_physical_key_pressed(KEY_A) and not event_notices.suppress_a) or Input.is_physical_key_pressed(KEY_LEFT): move.x -= 1
 	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT): move.x += 1
 	if not Input.get_connected_joypads().is_empty():
 		var pad = Input.get_connected_joypads()[0]
@@ -836,6 +840,9 @@ func title_action(action: String) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if cheats!=null and cheats.is_open(): return
 	if at_title: title_input(event); return
+	if event_notices.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseMotion:
 		last_pad = false
 		if panel == "map" and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
@@ -970,6 +977,7 @@ func toggle_anchor() -> void:
 	anchor = cursor if anchor == NO_CELL else NO_CELL
 
 func ui_action(action: String) -> void:
+	if action.begins_with("event:"): event_notices.action(action); return
 	if action.begins_with("play:"): gameplay_ui.action(action); return
 	if action.begins_with("tool:"): select_tool(int(action.get_slice(":",1)))
 	elif action.begins_with("kind:"):
@@ -1265,6 +1273,6 @@ func adjust_signal(amount: int) -> void:
 	s[key] = clampf(s[key] + amount * 2, 1, 120)
 
 func focus_alert() -> void:
-	if not inside(incidents.last_alert): tell("No hay alertas de nieve o incendio todavía."); return
+	if not inside(incidents.last_alert): tell("No hay alertas de eventos todavía."); return
 	cursor = incidents.last_alert
 	tell("Última alerta · " + str(cursor.x) + ", " + str(cursor.y))

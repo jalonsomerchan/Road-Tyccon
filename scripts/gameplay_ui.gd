@@ -24,6 +24,12 @@ func mode_label() -> String:
 			if item.id==g.selected_scenario: return item.name
 	return "Progresión" if g.selected_mode=="progression" else "Libre · Todas las carreteras"
 
+func starting_money() -> float:
+	if g.selected_mode=="scenario":
+		for item in g.gameplay.SCENARIOS:
+			if item.id==g.selected_scenario: return item.money
+	return g.WorldSettings.STARTING_MONEY
+
 func cycle_overlay() -> void:
 	var layers = ["none","traffic","condition","profit"]
 	g.gameplay.overlay=layers[(layers.find(g.gameplay.overlay)+1)%layers.size()]
@@ -156,7 +162,7 @@ func draw_traffic() -> void:
 	v.text(Vector2(160,278),gp.alert_text.substr(0,91),16,v.GREEN)
 	button(Rect2(160,297,300,36),"Ir al punto del diagnóstico","play:alert")
 	var eta = maxf(0,g.incidents.rules.weather_interval-g.incidents.weather_clock)
-	v.text(Vector2(160,371),"PREVISIÓN · %s en %.0f s"%["Nieve" if gp.weather_kind()=="snow" else "Incendio",eta],19,v.GREEN)
+	v.text(Vector2(160,371),("PREVISIÓN · %s en %.0f s"%["Nieve" if gp.weather_kind()=="snow" else "Incendio",eta]) if g.incidents.rules.weather_enabled else "PREVISIÓN · Clima desactivado",19,v.GREEN)
 	button(Rect2(160,393,300,38),"Bomberos · 250 € · radio 12","play:fire")
 	button(Rect2(475,393,310,38),"Quitanieves · 180 € · radio 12","play:snow")
 	button(Rect2(800,393,318,38),"Ir a última alerta","play:weather")
@@ -216,7 +222,7 @@ func draw_scenarios() -> void:
 		v.card(Rect2(160,y,958,88),Color("243c35"))
 		v.text(Vector2(178,y+27),definition.name,20,v.PAPER)
 		v.text(Vector2(178,y+53),definition.description,14,v.MUTED)
-		v.text(Vector2(178,y+74),"Semilla %d · Récord local %d"%[definition.seed,int(gp.scores.get(definition.id,{}).get("score",0))],12,v.GREEN)
+		v.text(Vector2(178,y+74),"Semilla %d · %s iniciales · Récord local %d"%[definition.seed,g.cash(definition.money),int(gp.scores.get(definition.id,{}).get("score",0))],12,v.GREEN)
 		button(Rect2(910,y+25,190,38),"Preparar reto","play:scenario:"+definition.id)
 	if not pending_scenario.is_empty():
 		v.text(Vector2(160,559),"Se creará una región nueva; el próximo guardado reemplazará la partida actual.",14,Color("efac95"))
