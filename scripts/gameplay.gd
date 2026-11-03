@@ -74,8 +74,11 @@ func reset(new_mode: String = "free", scenario: String = "") -> void:
 
 func prepare_cities() -> void:
 	for city in g.cities:
-		if not city.has("profile"): city.profile = posmod(city.pos.x*31+city.pos.y*17+g.world_seed,4)
-		if not city.has("connected_at"): city.connected_at = -1.0
+		prepare_city(city)
+
+func prepare_city(city: Dictionary) -> void:
+	if not city.has("profile"): city.profile = posmod(city.pos.x*31+city.pos.y*17+g.world_seed,4)
+	if not city.has("connected_at"): city.connected_at = -1.0
 
 func profile(city: Dictionary) -> int:
 	return int(city.get("profile",posmod(city.get("pos",Vector2i.ZERO).x*31+city.get("pos",Vector2i.ZERO).y*17+g.world_seed,4)))
@@ -274,11 +277,14 @@ func diagnose() -> void:
 func car_reason(car: Dictionary) -> String:
 	var p = g.traffic.position(car)
 	if car.get("crash_left",0.0)>0: return "Accidente: %.0f s restantes"%car.crash_left
+	if g.incidents.fire.has(p): return "Incendio · Paso cortado"
 	if not g.road_open(p): return "Carretera cerrada, en obras o retirada"
 	if car.step+1>=car.path.size(): return "Destino sin ruta disponible"
 	var next = Vector2i(car.path[car.step+1])
+	if g.incidents.fire.has(next): return "Incendio por delante · Esperando desvío o bomberos"
 	if not g.road_open(next): return "Corte de carretera por delante"
 	if not g.incidents.signal_allows(next,next-p): return "Semáforo en rojo"
+	if car.get("yielding",false): return "Parado en cruce · Cediendo el paso"
 	if car.get("blocked",false): return "Cola o capacidad agotada"
 	if g.traffic.curve_factor(car)<1: return "Tomando curva · Velocidad al %d %% · "%roundi(g.WorldSettings.CURVE_SPEED_FACTOR*100)+g.cities[car.dest].name
 	return "Circulando hacia "+g.cities[car.dest].name

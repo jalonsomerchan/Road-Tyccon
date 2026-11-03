@@ -72,6 +72,8 @@ func run() -> void:
 	assert(is_equal_approx(game.incidents.risk(p),0.75))
 	game.roads[p].hp = 10.0
 	assert(is_equal_approx(game.incidents.risk(p),0.9))
+	var previous_accidents: int = game.incidents.accidents
+	var previous_losses: float = game.incidents.accident_losses
 	var money: float = game.money
 	var probe = {"accident_clock":0.0,"crash_left":0.0}
 	var happened = false
@@ -80,8 +82,8 @@ func run() -> void:
 		probe.accident_clock = 30.0
 		if game.incidents.accident(probe,p,0.0): happened = true; break
 	assert(happened and game.money == money - 100)
-	assert(probe.crash_left == 15 and game.incidents.accidents == 1)
-	assert(game.incidents.accident_losses == 100)
+	assert(probe.crash_left == 15 and game.incidents.accidents == previous_accidents+1)
+	assert(game.incidents.accident_losses == previous_losses+100)
 	game.incidents.snow.clear()
 	game.incidents.fire.clear()
 	# Waiting reduces the reward for the same journey, rather than creating extra income.
@@ -106,7 +108,7 @@ func run() -> void:
 	game.traffic.reset()
 	game.load_game()
 	assert(game.cars.size() == vehicle_count and game.traffic.queued == queue_count)
-	assert(game.cars[0].dest == first_dest and game.incidents.accidents == 1)
+	assert(game.cars[0].dest == first_dest and game.incidents.accidents == previous_accidents+1)
 	assert(game.incidents.signals[p].ns == 12)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
 	game.free()

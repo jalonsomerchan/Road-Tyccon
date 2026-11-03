@@ -15,6 +15,11 @@ var road_conditions: Array = []
 var environment: Dictionary = {}
 var tooltip_rect = Rect2()
 var visible_car_tickets: Array = []
+var minimap_texture: ImageTexture
+var minimap_stamp: Array = []
+var minimap_next_update = 0
+var minimap_low = Vector2.ZERO
+var minimap_span = 1024.0
 var road_layout_revision = -1
 var junctions: Array = []
 var junction_coverage: Dictionary = {}
@@ -138,7 +143,6 @@ func draw() -> void:
 		draw_title()
 		return
 	if terrain_cache == null: terrain_cache = preload("res://scripts/terrain_render_cache.gd").new(g)
-	g.explore_around(g.camera)
 	if g.tile<overview.DETAIL_THRESHOLD:
 		terrain_cache.set_visible(false)
 		overview.draw(self)
@@ -500,21 +504,23 @@ func draw_hud() -> void:
 
 func draw_minimap() -> void:
 	card(Rect2(20, 492, 184, 184))
-	var low = Vector2(g.cursor)
-	var high = low
-	for c in g.cities:
-		low = low.min(Vector2(c.pos))
-		high = high.max(Vector2(c.pos))
-	low -= Vector2.ONE * 150
-	high += Vector2.ONE * 150
-	var span = maxf(600, maxf(high.x - low.x, high.y - low.y))
-	for c in g.cities:
-		var p = Vector2(29, 501) + (Vector2(c.pos) - low) / span * 166
-		rect(Rect2(p - Vector2(2, 2), Vector2(4, 4)), Color("f6dd9f"))
-	for p in g.roads:
-		rect(Rect2(Vector2(29, 501) + (Vector2(p) - low) / span * 166, Vector2(1, 1)), GREEN)
-	var current = Vector2(29, 501) + (g.camera - low) / span * 166
-	canvas.draw_rect(Rect2(current - Vector2(640, 400) / g.tile / span * 166, Vector2(1280, 800) / g.tile / span * 166), GREEN, false, 1)
+	var stamp:Array=[g.world_seed,g.terrain.generation,g.explored.revision,g.road_revision]
+	if minimap_texture==null or (stamp!=minimap_stamp and Time.get_ticks_msec()>=minimap_next_update):
+		minimap_stamp=stamp;minimap_next_update=Time.get_ticks_msec()+500
+		minimap_low=Vector2(g.explored.bounds.position)
+		minimap_span=maxf(600,maxf(g.explored.bounds.size.x,g.explored.bounds.size.y))
+		var image=Image.create(166,166,false,Image.FORMAT_RGBA8)
+		for p in g.roads:
+			var at=Vector2i(((Vector2(p)-minimap_low)/minimap_span*165).floor())
+			if Rect2i(0,0,166,166).has_point(at): image.set_pixelv(at,GREEN)
+		for c in g.cities:
+			var at=Vector2i(((Vector2(c.pos)-minimap_low)/minimap_span*165).floor())
+			image.fill_rect(Rect2i(at-Vector2i.ONE,Vector2i(3,3)).intersection(Rect2i(0,0,166,166)),Color("f6dd9f"))
+		if minimap_texture==null: minimap_texture=ImageTexture.create_from_image(image)
+		else: minimap_texture.update(image)
+	canvas.draw_texture_rect(minimap_texture,Rect2(29,501,166,166),false)
+	var current=Vector2(29,501)+(g.camera-minimap_low)/minimap_span*165
+	canvas.draw_rect(Rect2(current-Vector2(640,400)/g.tile/minimap_span*165,Vector2(1280,800)/g.tile/minimap_span*165),GREEN,false,1)
 	text(Vector2(32, 515), "REGIÓN CONOCIDA · M", 10, MUTED)
 
 func draw_tool_icon(icon: String, at: Vector2, color: Color, size: float = 30) -> void:
@@ -547,7 +553,7 @@ func draw_panel() -> void:
 	g.ui_hits.clear()
 	rect(Rect2(0,0,1280,800),Color(0.03,0.08,0.06,0.86))
 	card(Rect2(128,92,1024,614))
-	var titles = {"catalog":"Elige tu carretera", "menu":"Tu región", "cities":"Ciudades", "map":"Mapa de la región", "stats":"Estadísticas", "accounts":"Contabilidad", "info":"Tu selección", "help":"Cómo jugar", "infrastructure":"Rotondas y semáforos", "signal":"Configurar semáforo","objectives":"Objetivos y progresión","network":"Gestión de la red","scenarios":"Escenarios y récords"}
+	var titles = {"catalog":"Construye tu red", "menu":"Tu región", "cities":"Ciudades", "map":"Mapa de la región", "stats":"Estadísticas", "accounts":"Contabilidad", "info":"Tu selección", "help":"Cómo jugar", "infrastructure":"Rotondas y semáforos", "signal":"Configurar semáforo","objectives":"Objetivos y progresión","network":"Gestión de la red","scenarios":"Escenarios y récords"}
 	text(Vector2(156,132),titles.get(g.panel,"Entre Ciudades"),25,GREEN)
 	button(Rect2(1015,105,110,36),"Volver B","close")
 	match g.panel:
@@ -688,21 +694,7 @@ func draw_accounts() -> void:
 	text(Vector2(164,675),"Cruceta / stick elegir · A filtrar / desplazar · LB/RB filtros · B volver",13,MUTED)
 
 func draw_catalog() -> void:
-	for i in 3:
-		button(Rect2(156+i*325,150,310,34),["Carretera","Rotonda · 3×3","Semáforo"][i],"mode:"+["road","roundabout","signal"][i],g.construction_mode==["road","roundabout","signal"][i])
-	for i in g.Catalog.ROADS.size():
-		var column = int(i / 12)
-		var row = i % 12
-		var spec = g.Catalog.ROADS[i]
-		var area = Rect2(156 + column * 486, 195 + row * 36, 470, 33)
-		button(area, "", "kind:" + str(i), i == g.kind)
-		sprite("roads", i, Rect2(area.position + Vector2(5, 5), Vector2(26, 26)))
-		var color = INK if i == g.kind else PAPER
-		var unlocked = g.gameplay.unlocked(i)
-		if not unlocked: color=MUTED
-		text(area.position + Vector2(43, 14), spec.name+(" · N%d"%g.gameplay.road_tier(i) if not unlocked else ""), 15, color)
-		text(area.position + Vector2(43, 29), (str(spec.lanes) + (" carril · " if spec.lanes == 1 else " carriles · ")) + str(int(spec.speed * 15)) + " km/h · cap. " + str(spec.cap) + " · " + g.cash(spec.cost), 12, color)
-	text(Vector2(161, 669), "Cruceta / flechas elegir · A / Enter confirmar · X cambiar modo · B volver", 15, MUTED)
+	g.construction_catalog.draw(self)
 
 func draw_info() -> void:
 	var ci = g.city_at(g.cursor)
@@ -715,7 +707,7 @@ func draw_info() -> void:
 	elif g.roads.has(g.cursor):
 		var r = g.roads[g.cursor]
 		text(Vector2(166, 230), g.Catalog.ROADS[r.kind].name, 26)
-		text(Vector2(166, 268), "En obras" if r.work > 0 else ("Cerrada al tráfico" if r.closed else "Abierta al tráfico"), 19, Color("f5b790") if r.closed else GREEN)
+		text(Vector2(166, 268), "Incendio · Paso cortado" if g.incidents.fire.has(g.cursor) else "En obras" if r.work > 0 else ("Cerrada al tráfico" if r.closed else "Abierta al tráfico"), 19, Color("f5b790") if r.closed or g.incidents.fire.has(g.cursor) else GREEN)
 		text(Vector2(166, 302), "Conservación: " + str(int(r.hp)) + "%", 18)
 		if r.work > 0: text(Vector2(166, 334), "Obra pendiente: %.1f s" % r.work, 18)
 	else:
@@ -735,12 +727,14 @@ func draw_help() -> void:
 		"Cierra antes de reparar o mejorar. Después de las obras, vuelve a abrir.",
 		"Conecta las calles y los accesos señalados de las ciudades.",
 		"Los coches viajan y pagan al llegar: verás el ingreso junto a la ciudad.",
+		"El fuego corta y destruye las vías. Envía bomberos y reconstruye las quemadas.",
+		"Sin semáforo activo, los coches paran y ceden el paso en los cruces.",
 		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las cinco herramientas.",
 		"Mayús mover rápido · Espacio / L3 pausa · F velocidad · G / R3 siguiente ciudad.",
 		"I inspección · M / View mapa · 6 / F10 / ☰ menú · B / Esc cancelar.",
 		"K objetivos · C inspeccionar coche · L capas · Ctrl+Z deshacer · Menú: Red y servicios."
 	]
-	for i in lines.size(): text(Vector2(166, 191 + i * 42), lines[i], 18, PAPER)
+	for i in lines.size(): text(Vector2(166, 191 + i * 38), lines[i], 18, PAPER)
 
 func draw_city_accesses() -> void:
 	for c in g.cities:
@@ -809,10 +803,12 @@ func draw_tooltip() -> void:
 	var road = g.roads[actual]
 	var spec = g.Catalog.ROADS[road.kind]
 	var lines: Array = []
-	var status = "DEMOLIENDO" if road.get("demolishing",false) else ("EN OBRAS" if road.work > 0 else ("CERRADA" if road.closed else "ABIERTA"))
+	var status = "INCENDIO · PASO CORTADO" if g.incidents.fire.has(p) else "DEMOLIENDO" if road.get("demolishing",false) else ("EN OBRAS" if road.work > 0 else ("CERRADA" if road.closed else "ABIERTA"))
 	lines.append(status + (" · Rotonda 3×3" if is_roundabout else ""))
 	lines.append(str(spec.lanes) + " carriles · " + str(g.density.get(actual,0)) + "/" + str(g.traffic.capacity(actual)) + " coches")
 	lines.append("Conservación " + str(int(road.hp)) + "% · " + str(int(spec.speed*15)) + " km/h")
+	if g.incidents.fire.has(actual): lines.append("Fuego: −%.1f puntos/s · Envía bomberos"%g.WorldSettings.FIRE_ROAD_DAMAGE)
+	elif g.traffic.junctions.uncontrolled(actual): lines.append("Cruce sin semáforo · Parar y ceder el paso")
 	lines.append("Accidentes " + str(int(round(g.incidents.risk(actual)*100))) + "%% cada %.1f s" % g.incidents.ACCIDENT_INTERVAL)
 	if g.incidents.fire.has(actual) or g.incidents.snow.has(actual):
 		lines.append(("Fuego +%d%%  " % roundi(g.WorldSettings.FIRE_ACCIDENT_RISK*100) if g.incidents.fire.has(actual) else "") + ("Nieve +%d%%" % roundi(g.WorldSettings.SNOW_ACCIDENT_RISK*100) if g.incidents.snow.has(actual) else ""))
@@ -864,7 +860,7 @@ func draw_signal_panel() -> void:
 		if i<2:
 			button(Rect2(918,195+i*92,60,60),"−","signal:"+("ns-" if i==0 else "ew-"))
 			button(Rect2(990,195+i*92,60,60),"+","signal:"+("ns+" if i==0 else "ew+"))
-	var phase = "APAGADO · paso libre" if not light.enabled else ("VERDE norte / sur" if g.incidents.signal_allows(g.cursor,Vector2i.UP) else "VERDE este / oeste")
+	var phase = "APAGADO · ceder el paso" if not light.enabled else ("VERDE norte / sur" if g.incidents.signal_allows(g.cursor,Vector2i.UP) else "VERDE este / oeste")
 	text(Vector2(225,522),phase,23,GREEN)
 	text(Vector2(225,566),"Los coches esperan antes de entrar en la casilla mientras su dirección está roja.",16,MUTED)
 	text(Vector2(225,619),"↑↓ elegir · ←→ ajustar · A / Enter aumentar o activar · B / Esc cerrar",16,PAPER)

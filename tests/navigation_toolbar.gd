@@ -39,9 +39,10 @@ func run() -> void:
 	press(game,JOY_BUTTON_Y)
 	assert(game.panel=="catalog")
 	press(game,JOY_BUTTON_DPAD_DOWN)
-	assert(game.kind==old_kind+1)
+	assert(game.kind==old_kind and game.construction_catalog.selected!="road:"+str(old_kind))
+	var preview_kind=game.construction_catalog.road_id(game.construction_catalog.selected)
 	press(game,JOY_BUTTON_A)
-	assert(game.panel=="" and game.tool==0)
+	assert(game.panel=="" and game.tool==0 and game.kind==preview_kind)
 	# First action selects an endpoint, repeat at same point never spends money.
 	game.terrain.fill(0)
 	game.cursor = Vector2i(300,300)

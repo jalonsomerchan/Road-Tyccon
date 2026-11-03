@@ -69,6 +69,25 @@ func run() -> void:
 	g.event_notices.push("accident",fire,"Otro vehículo detenido")
 	assert(g.event_notices.pending.size()==1 and g.event_notices.pending[0].count==2)
 	press(JOY_BUTTON_A);assert(g.cursor==fire and g.event_notices.pending.is_empty())
+	# Real accidents appear immediately even when weather notices are still waiting.
+	g.incidents.ignite(fire);g.incidents.snow_zone(snow,2)
+	var weather_id:int=g.event_notices.pending[0].id
+	crashed=false;driver.crash_left=0
+	for i in 20:
+		if g.incidents.accident(driver,fire,g.incidents.ACCIDENT_INTERVAL): crashed=true;break
+	assert(crashed and g.event_notices.pending[0].kind=="accident")
+	assert(g.event_notices.pending.size()==3 and g.event_notices.pending[1].id==weather_id)
+	var accident_id:int=g.event_notices.pending[0].id
+	g.event_notices.push("accident",snow,"Segundo accidente")
+	g.event_notices.push("fire",snow,"Nuevo incendio")
+	g.event_notices.push("accident",fire,"Dos vehículos implicados")
+	assert(g.event_notices.pending[0].id==accident_id and g.event_notices.pending[0].count==2)
+	assert(g.event_notices.pending.size()==5,"Repeated accidents group even when another event arrived in between")
+	var stop_left:float=driver.crash_left
+	press(JOY_BUTTON_B)
+	assert(driver.crash_left==stop_left and g.event_notices.pending[0].id==weather_id)
+	assert(g.event_notices.pending[0].kind=="fire","Dismissing a crash retains the previous weather alert")
+	g.event_notices.reset()
 	# Limit the queue while preserving the currently visible event and its id.
 	g.incidents.ignite(fire);first_id=g.event_notices.pending[0].id
 	for i in 40: g.event_notices.push("snow",snow+Vector2i(i,0),"Nieve")

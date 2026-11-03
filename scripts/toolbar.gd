@@ -101,10 +101,15 @@ func draw() -> void:
 	if g.construction_mode=="roundabout":
 		var image=v.road_conditions[g.kind].roundabout
 		if image!=null: v.canvas.draw_texture_rect(image,Rect2(525,713,40,40),false)
+	elif g.construction_mode=="signal": icon("signal",Vector2(545,733),v.GREEN,38)
 	else: v.sprite("roads",g.kind,Rect2(525,713,40,40))
-	v.text(Vector2(582,717),"TIPO DE VÍA · Y",10,v.MUTED)
-	v.text(Vector2(582,738),fit(g.Catalog.ROADS[g.kind].name,196,14),14,v.PAPER)
-	v.text(Vector2(582,755),str(g.Catalog.ROADS[g.kind].lanes)+" carriles · "+g.cash(g.Catalog.ROADS[g.kind].cost)+" / casilla",11,v.MUTED)
+	v.text(Vector2(582,717),"CONSTRUCCIÓN · Y",10,v.MUTED)
+	var title=g.Catalog.ROADS[g.kind].name
+	var detail=str(g.Catalog.ROADS[g.kind].lanes)+" carriles · "+g.cash(g.Catalog.ROADS[g.kind].cost)+" / casilla"
+	if g.construction_mode=="signal": title="Semáforo";detail="A sobre una carretera · Gratis"
+	elif g.construction_mode=="roundabout": title="Rotonda · "+title;detail="3 × 3 casillas · "+g.cash(g.Catalog.ROADS[g.kind].cost*9)
+	v.text(Vector2(582,738),fit(title,196,14),14,v.PAPER)
+	v.text(Vector2(582,755),detail,11,v.MUTED)
 	icon("chevron_down",Vector2(801,734),v.GREEN,15)
 	g.ui_hits.append({"rect":selector,"action":"catalog"})
 	if hovered(selector): hover_hint="Catálogo de carreteras y puentes · Y / V abrir · Flechas o cruceta elegir"

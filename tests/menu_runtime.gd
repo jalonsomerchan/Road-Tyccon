@@ -122,9 +122,11 @@ func run() -> void:
 		assert(g.gameplay_ui.tab==(tab+1)%3 and g.panel=="network")
 		await tap(JOY_BUTTON_B)
 	# Catalog, lists, information, help, infrastructure, signals, objectives and scenarios.
-	g.close_panels();g.open_road_selector();g.menu_focus.pick("mode:roundabout");await tap(JOY_BUTTON_A)
-	assert(g.construction_mode=="roundabout" and g.panel=="catalog")
-	g.menu_focus.pick("kind:3");await tap(JOY_BUTTON_A);assert(g.panel=="" and g.kind==3)
+	g.close_panels();g.open_road_selector();g.construction_catalog.choose_tab(5)
+	g.menu_focus.pick("catalog:item:roundabout");await tap(JOY_BUTTON_A)
+	assert(g.construction_mode=="roundabout" and g.panel=="")
+	g.open_road_selector();g.construction_catalog.choose_tab(2)
+	g.menu_focus.pick("catalog:item:road:3");await tap(JOY_BUTTON_A);assert(g.panel=="" and g.kind==3 and g.construction_mode=="road")
 	for panel in ["cities","accounts","stats","info","help","infrastructure","objectives","scenarios"]:
 		g.close_panels();g.open_panel(panel)
 		assert(not g.menu_focus.current.is_empty())

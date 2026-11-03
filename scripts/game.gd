@@ -50,9 +50,12 @@ var maintenance
 var navigator
 var cheats
 var menu_focus
+var construction_catalog
 var deck_input
 var gameplay
 var services
+var world_stream
+var road_update_clock = 0.0
 var gameplay_ui
 var selected_mode = "progression"
 var selected_scenario = "budget"
@@ -88,6 +91,8 @@ var building_world = false
 var save_clock = 0.0
 var move_clock = 0.0
 var move_held = 0.0
+var regional_cursor = Vector2.ZERO
+var regional_cursor_cell = NO_CELL
 var last_move = Vector2i.ZERO
 var city_serial = 0
 var world_seed = WorldSettings.WORLD_SEED
@@ -131,7 +136,9 @@ func _ready() -> void:
 	services = preload("res://scripts/network_services.gd").new(self)
 	gameplay_ui = preload("res://scripts/gameplay_ui.gd").new(self)
 	menu_focus = preload("res://scripts/menu_focus.gd").new(self)
+	construction_catalog = preload("res://scripts/construction_catalog.gd").new(self)
 	deck_input = preload("res://scripts/deck_input.gd").new(self)
+	world_stream = preload("res://scripts/world_stream.gd").new(self)
 	visuals = preload("res://scripts/visuals.gd").new(self)
 	cheats = preload("res://scripts/cheat_console.gd").new(self)
 	add_child(cheats)
@@ -151,6 +158,8 @@ func _ready() -> void:
 	queue_redraw()
 
 func generate_world() -> void:
+	world_stream.reset()
+	road_update_clock = 0.0
 	rng.seed = world_seed
 	accounts.reset(money)
 	maintenance.reset()
@@ -212,7 +221,7 @@ func generate_initial_cities() -> void:
 			if not valid: continue
 			city_serial+=1
 			var names = ["Ribera", "Encinar", "Puertollano", "Santa Clara", "Villalba", "Las Lomas", "Buenavista", "Peñablanca", "Alameda"]
-			add_city(p,names[(city_serial-1)%names.size()]+(" "+str(city_serial) if city_serial>names.size() else ""),WorldSettings.NEW_CITY_RADIUS)
+			add_city(p,names[(city_serial-1)%names.size()]+(" "+str(city_serial) if city_serial>names.size() else ""),CityDesign.initial_radius(p,world_seed))
 	if cities.size()<INITIAL_CITY_COUNT:
 		push_warning("Solo caben %d de %d ciudades. Ajusta scripts/world_settings.gd."%[cities.size(),INITIAL_CITY_COUNT])
 
@@ -238,9 +247,9 @@ func add_city(pos: Vector2i, title: String, radius: int = WorldSettings.NEW_CITY
 			if Vector2(pos).distance_squared_to(Vector2(c.pos)) < Vector2(pos).distance_squared_to(Vector2(nearest)): nearest = c.pos
 		var delta: Vector2i = nearest - pos
 		first_direction = Vector2i(int(sign(delta.x)), 0) if abs(delta.x) >= abs(delta.y) else Vector2i(0, int(sign(delta.y)))
-	cities.append({"pos":pos, "name":title, "radius":radius, "pop":(radius - 1) * WorldSettings.POPULATION_PER_RADIUS + WorldSettings.CITY_BASE_POPULATION, "received":0, "recent":0, "access_dirs":[first_direction], "accesses":[]})
+	cities.append({"pos":pos, "name":title, "radius":radius, "pop":(radius - 1) * WorldSettings.POPULATION_PER_RADIUS + WorldSettings.CITY_BASE_POPULATION, "received":0, "recent":0, "access_dirs":[first_direction], "accesses":[],"design_variant":CityDesign.variant(pos,world_seed)})
 	explored.reveal(Vector2(pos),Vector2.ONE*(radius+5))
-	gameplay.prepare_cities()
+	gameplay.prepare_city(cities.back())
 	if cities.size()<=2: cities.back().profile=cities.size()-1
 	clear_city_plot(cities.back())
 	if not building_world:
@@ -254,6 +263,41 @@ func clear_city_plot(city: Dictionary) -> void:
 		for x in range(city.pos.x - radius, city.pos.x + radius + 1):
 			var p = Vector2i(x, y)
 			if inside(p): terrain.set_cell(p, 0)
+
+func append_streamed_city(pos: Vector2i, title: String) -> void:
+	var was_dirty = graph_dirty
+	building_world = true
+	add_city(pos,title,CityDesign.initial_radius(pos,world_seed))
+	building_world = false
+	graph_dirty = was_dirty
+	var index = cities.size()-1
+	var added = CityRoads.append_isolated(self,index)
+	cities[index].unlocked=[]
+	traffic.current_links[index]=[]
+	var previous_revision = road_revision
+	road_revision += 1
+	# Estas ciudades no cambian el mantenimiento ni las vías del jugador.
+	if incidents.abandonment_revision==previous_revision:
+		incidents.abandonment_revision=road_revision;incidents.abandonment_size=roads.size()
+	if gameplay.upkeep_revision==previous_revision: gameplay.upkeep_revision=road_revision
+	if visuals.overview.player_revision==previous_revision: visuals.overview.player_revision=road_revision
+	if visuals.terrain_cache!=null: visuals.terrain_cache.append_city(added,index,previous_revision)
+	if visuals.road_layout_revision==previous_revision:
+		for p in added:
+			visuals.node_shapes[p]=visuals.Connections.shape_for(visuals.Connections.mask_for(p,roads,city_cells,city_connectors),roads[p].axis)
+		visuals.road_layout_revision=road_revision
+	# Solo hay puntos nuevos y aislados; las rutas existentes siguen siendo válidas.
+	for p in added:
+		if not road_open(p): continue
+		var cost = 1.0/Catalog.ROADS[roads[p].kind].speed
+		graph.add_point(point_id(p),Vector2(p),cost)
+		graph.minimum_step_cost = minf(graph.minimum_step_cost,cost)
+		if traffic.junctions.uncontrolled(p): graph.junction_delays[point_id(p)]=WorldSettings.JUNCTION_STOP_TIME
+	for p in added:
+		if not graph.has_point(point_id(p)): continue
+		for d in DIRS:
+			var q = p+d
+			if graph.has_point(point_id(q)) and edge_allowed(p,q): graph.connect_points(point_id(p),point_id(q),false)
 
 func ensure_city_accesses() -> void:
 	CityRoads.sync(self)
@@ -313,18 +357,20 @@ func point_id(p: Vector2i) -> int:
 	return point_ids[p]
 
 func road_open(p: Vector2i) -> bool:
-	return roads.has(p) and not roads[p].closed and roads[p].work <= 0.0
+	return roads.has(p) and not roads[p].closed and roads[p].work <= 0.0 and not incidents.fire.has(p)
 
 func rebuild_graph() -> void:
 	refresh_city_connectors()
 	road_revision += 1
 	graph.clear()
 	graph.minimum_step_cost=INF
+	graph.junction_delays.clear()
 	route_cache.clear()
 	for p in roads:
 		if road_open(p):
 			var cost = 1.0 / Catalog.ROADS[roads[p].kind].speed * (1.0 if road_nodes.has(p) else 2.5)
 			graph.add_point(point_id(p),Vector2(p),cost)
+			if traffic.junctions.uncontrolled(p): graph.junction_delays[point_id(p)]=WorldSettings.JUNCTION_STOP_TIME
 			graph.minimum_step_cost=minf(graph.minimum_step_cost,cost)
 	for id in graph.get_point_ids():
 		var p = Vector2i(graph.get_point_position(id))
@@ -374,28 +420,33 @@ func _process(delta: float) -> void:
 	if panel == "map":
 		if move != Vector2i.ZERO: navigator.pan(Vector2(move).normalized()*navigator.span*delta*0.45*(2 if Input.is_physical_key_pressed(KEY_SHIFT) else 1))
 		navigator.update(delta)
-	if panel == "" and move != Vector2i.ZERO and move_clock <= 0:
-		var stride = 8 if Input.is_physical_key_pressed(KEY_SHIFT) else (4 if last_pad and move_held > 0.65 else 1)
-		stride*=maxi(1,ceili(8.0/tile))
-		cursor += move * stride
-		move_clock = 0.085
-	explore_around(Vector2(cursor))
-	camera = camera.lerp(Vector2(cursor), minf(1.0, delta * 12))
-	for p in roads:
-		var r = roads[p]
-		if r.work > 0:
-			r.work = maxf(0, r.work - dt)
-			if r.work == 0:
-				r.hp = 100.0
-				r.last_used = elapsed
-				graph_dirty = true
-		elif not r.closed:
-			r.hp = maxf(WorldSettings.ROAD_MIN_HEALTH, r.hp - dt * WorldSettings.ROAD_PASSIVE_WEAR)
+	var camera_target = Vector2(cursor)
+	if panel=="" and move!=Vector2i.ZERO and tile<visuals.overview.DETAIL_THRESHOLD:
+		if cursor!=regional_cursor_cell: regional_cursor=Vector2(cursor)
+		var fast = Input.is_physical_key_pressed(KEY_SHIFT) or (last_pad and move_held>.65)
+		regional_cursor += Vector2(move).normalized()*280.0*(2.0 if fast else 1.0)*minf(delta,.05)/tile
+		cursor=Vector2i(regional_cursor.round());regional_cursor_cell=cursor
+		camera_target=regional_cursor
+	else:
+		regional_cursor_cell=NO_CELL
+		if panel == "" and move != Vector2i.ZERO and move_clock <= 0:
+			var stride = 8 if Input.is_physical_key_pressed(KEY_SHIFT) else (4 if last_pad and move_held > 0.65 else 1)
+			cursor += move * stride
+			move_clock = 0.085
+		camera_target=Vector2(cursor)
+	camera = camera.lerp(camera_target, 1.0-exp(-delta*18.0))
+	explore_around(camera,true)
+	if not explored.contains(cursor): explore_around(Vector2(cursor),true)
+	road_update_clock += dt
+	if road_update_clock>=0.1:
+		update_roads(road_update_clock)
+		road_update_clock = 0.0
 	maintenance.update(dt)
 	services.update(dt)
-	if graph_dirty: rebuild_graph()
-	update_cars(dt)
 	incidents.update(dt)
+	if graph_dirty: rebuild_graph()
+	world_stream.update()
+	update_cars(dt)
 	gameplay.update(dt,delta)
 	demand_clock += dt
 	if demand_clock >= traffic.DEMAND_INTERVAL:
@@ -410,6 +461,19 @@ func _process(delta: float) -> void:
 		save_clock = 0
 		save_game(false)
 	queue_redraw()
+
+func update_roads(dt: float) -> void:
+	for p in roads:
+		var r = roads[p]
+		if incidents.fire.has(p): continue
+		if r.work > 0:
+			r.work = maxf(0, r.work - dt)
+			if r.work == 0:
+				r.hp = 100.0
+				r.last_used = elapsed
+				graph_dirty = true
+		elif not r.closed:
+			r.hp = maxf(minf(r.hp,WorldSettings.ROAD_MIN_HEALTH), r.hp - dt * WorldSettings.ROAD_PASSIVE_WEAR)
 
 func spawn_trips() -> void:
 	traffic.spawn_demand()
@@ -432,11 +496,13 @@ func grow_cities() -> void:
 		ensure_city_accesses()
 		graph_dirty = true
 
-func explore_around(at: Vector2) -> void:
+func explore_around(at: Vector2, background: bool = false) -> void:
 	if Vector2i(at)==NO_CELL: return
 	var added = explored.reveal(at,Vector2(660,420)/minf(tile,zoom_target)+Vector2.ONE*World.CHUNK)
 	if added.is_empty(): return
-	if terrain.flat_override<0:
+	if terrain.flat_override<0 and background:
+		world_stream.enqueue(added)
+	elif terrain.flat_override<0:
 		var before = cities.size()
 		building_world = true
 		for key in added: populate_region(key)
@@ -470,7 +536,7 @@ func populate_region(key: Vector2i) -> void:
 					if not free: break
 				if not free: continue
 				city_serial += 1
-				add_city(pos,"Villa "+str(city_serial),WorldSettings.NEW_CITY_RADIUS)
+				add_city(pos,"Villa "+str(city_serial),CityDesign.initial_radius(pos,world_seed))
 				break
 
 func spawn_city(announce: bool = true) -> bool:
@@ -492,7 +558,7 @@ func spawn_city(announce: bool = true) -> bool:
 		if not valid: continue
 		city_serial += 1
 		var names = ["Encinar", "Puertollano", "Santa Clara", "Villalba", "Las Lomas", "Buenavista", "Peñablanca", "Alameda"]
-		add_city(p, names[(city_serial - 1) % names.size()] + (" " + str(city_serial) if city_serial > 8 else ""))
+		add_city(p, names[(city_serial - 1) % names.size()] + (" " + str(city_serial) if city_serial > 8 else ""),CityDesign.initial_radius(p,world_seed))
 		if announce: tell("Nueva ciudad: " + cities.back().name + " · G / R3 para localizar su acceso")
 		return true
 	return false
@@ -559,6 +625,7 @@ func apply_road_operation(operation: int) -> void:
 	var targets: Array = []
 	var cost = 0.0
 	for p in cells:
+		if incidents.fire.has(p) and operation in [0,1,2,4]: tell("Apaga el incendio antes de construir, reparar o reabrir la vía."); return
 		if services.service_jobs.has(p): tell("Espera a que termine el mantenimiento del tramo."); return
 		if not inside(p): return
 		if terrain.flat_override<0 and not explored.contains(p): tell("Explora esa zona antes de construir el tramo."); return
@@ -649,7 +716,7 @@ func cash(value: float) -> String:
 func save_game(message: bool = true) -> void:
 	var file = FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null: tell("No se pudo guardar la partida."); return
-	file.store_var({"version":2, "roads":roads, "road_nodes":road_nodes, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"pause_speed_index":pause_speed_index,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
+	file.store_var({"version":2,"streaming":world_stream.snapshot(),"road_update_clock":road_update_clock, "roads":roads, "road_nodes":road_nodes, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"pause_speed_index":pause_speed_index,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
 	if message: tell("Partida guardada.")
 
 func load_game() -> bool:
@@ -657,6 +724,8 @@ func load_game() -> bool:
 	if file == null: tell("Todavía no hay una partida guardada."); return false
 	var data = file.get_var(false)
 	if not data is Dictionary or data.get("version", 0) != 2: tell("Archivo de guardado incompatible."); return false
+	world_stream.restore(data.get("streaming",[]))
+	road_update_clock = data.get("road_update_clock",0.0)
 	roads = data.roads
 	point_ids.clear()
 	explored.restore(data.get("explored",{}))
@@ -674,6 +743,7 @@ func load_game() -> bool:
 	camera = Vector2(cursor)
 	world_seed = data.seed
 	terrain.restore(data.terrain)
+	terrain.enable_frontier_lakes(explored.regions)
 	incidents.restore(data.get("incidents", {}))
 	ensure_city_accesses()
 	maintenance.restore(data.get("maintenance",{}))
@@ -873,18 +943,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.physical_keycode == KEY_F: cycle_speed(); return
 		if event.keycode in [KEY_PLUS,KEY_KP_ADD] or event.physical_keycode in [KEY_EQUAL,KEY_PAGEUP]:
 			if panel == "cities": move_city_list(-6)
+			elif panel=="catalog": construction_catalog.change_page(-1)
 			elif panel in ["","map"]: zoom_control(1.25)
 			return
 		if event.keycode in [KEY_MINUS,KEY_KP_SUBTRACT] or event.physical_keycode in [KEY_MINUS,KEY_PAGEDOWN]:
 			if panel == "cities": move_city_list(6)
+			elif panel=="catalog": construction_catalog.change_page(1)
 			elif panel in ["","map"]: zoom_control(1.0/1.25)
 			return
 		if event.physical_keycode == KEY_H and panel == "menu": open_panel("help"); return
 		if event.physical_keycode == KEY_Q:
 			if panel=="": cycle_world_tool(-1)
+			elif panel=="catalog": panel_bumper(-1)
 			return
 		if event.physical_keycode == KEY_TAB:
 			if panel=="": cycle_world_tool(1)
+			elif panel=="catalog": panel_bumper(1)
 			else: panel_move(1,0)
 			return
 		if panel != "":
@@ -938,7 +1012,7 @@ func toggle_pause() -> void:
 func panel_bumper(direction: int) -> void:
 	match panel:
 		"cities": move_city_list(direction*6)
-		"catalog": panel_move(direction,0)
+		"catalog": construction_catalog.change_tab(direction)
 		"accounts": account_filter=posmod(account_filter+direction,3);account_scroll=0
 		"network": gameplay_ui.tab=posmod(gameplay_ui.tab+direction,3);gameplay_ui.focus_index=0
 		"menu","objectives","scenarios": panel_move(direction,0)
@@ -954,6 +1028,7 @@ func ui_action(action: String) -> void:
 	if not menu_focus.available(action):
 		if action=="load": tell("Todavía no hay una partida guardada.")
 		return
+	if action.begins_with("catalog:"): construction_catalog.action(action); return
 	if action.begins_with("toolbar:"): visuals.toolbar.action(action); return
 	if action.begins_with("event:"): event_notices.action(action); return
 	if action.begins_with("play:"): gameplay_ui.action(action); return
@@ -1034,6 +1109,7 @@ func open_panel(name: String) -> void:
 		if TOOLS[tool].id != "menu": last_world_tool = tool
 		tool = TOOLS.size()-1
 	panel = name
+	if name == "catalog": construction_catalog.open()
 	if name == "map": navigator.open()
 	if name == "cities": city_list_index = clampi(city_list_index,0,maxi(0,cities.size()-1))
 	if name == "accounts": account_scroll = 0
@@ -1087,10 +1163,8 @@ func panel_secondary(y_button: bool) -> void:
 			else: navigator.known_region()
 		"accounts": account_filter = (account_filter+1)%3; account_scroll = 0
 		"catalog":
-			if not y_button:
-				var modes = ["road","roundabout","signal"]
-				construction_mode = modes[(modes.find(construction_mode)+1)%modes.size()]
-				anchor = NO_CELL
+			if construction_catalog.selected=="roundabout": construction_catalog.cycle_base(-1 if y_button else 1)
+			else: construction_catalog.change_page(-1 if y_button else 1)
 
 func move_city_list(amount: int) -> void:
 	city_list_index = clampi(city_list_index+amount,0,maxi(0,cities.size()-1))
@@ -1180,6 +1254,7 @@ func build_roundabout() -> void:
 	for y in range(-1, 2):
 		for x in range(-1, 2):
 			var p = center + Vector2i(x, y)
+			if incidents.fire.has(p): tell("Apaga el incendio antes de construir la rotonda."); return
 			if not inside(p) or city_at(p) >= 0 or incidents.protected_access(p) or incidents.roundabout_cells.has(p):
 				tell("La rotonda necesita 3 × 3 casillas libres de ciudades, accesos y otras rotondas."); return
 			if ground(p) in [3, 4] or (ground(p) == 1 and not spec.get("bridge", false)):
@@ -1217,6 +1292,7 @@ func install_signal() -> void:
 	gameplay.begin_review("Nuevo semáforo")
 	roads[cursor].player_modified=true
 	incidents.signals[cursor] = {"ns":WorldSettings.SIGNAL_NS_GREEN, "ew":WorldSettings.SIGNAL_EW_GREEN, "enabled":true, "offset":-elapsed}
+	graph_dirty = true
 	panel = "signal"
 	tell("Semáforo instalado · Ajusta los tiempos por dirección")
 
@@ -1230,14 +1306,13 @@ func special_accept() -> void:
 		tool = 0
 		panel = ""
 	elif panel == "signal" and incidents.signals.has(cursor):
-		if signal_index == 2: incidents.signals[cursor].enabled = not incidents.signals[cursor].enabled
-		else: adjust_signal(1)
+		adjust_signal(1)
 
 func adjust_signal(amount: int) -> void:
 	if panel != "signal" or not incidents.signals.has(cursor): return
 	gameplay.begin_review("Ajuste del semáforo")
 	var s = incidents.signals[cursor]
-	if signal_index == 2: s.enabled = not s.enabled; return
+	if signal_index == 2: s.enabled = not s.enabled; graph_dirty = true; return
 	var key = "ns" if signal_index == 0 else "ew"
 	s[key] = clampf(s[key] + amount * 2, 1, 120)
 

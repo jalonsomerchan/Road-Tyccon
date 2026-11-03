@@ -51,7 +51,8 @@ func run() -> void:
 	var turning=driver(corner,1)
 	var continuing=driver(PackedVector2Array([Vector2(100,100),Vector2(101,100),Vector2(102,100)]),1)
 	assert(is_equal_approx(g.traffic.driving_speed(turning)/g.traffic.driving_speed(continuing),g.WorldSettings.CURVE_SPEED_FACTOR))
-	# A mid-frame crossing converts remaining time to the lower corner speed.
+	# A mid-frame green-light crossing converts remaining time to the lower corner speed.
+	g.incidents.signals[Vector2i(101,100)]={"ns":1.0,"ew":120.0,"enabled":true,"offset":1.0}
 	g.cars=[driver(corner)];g.cars[0].t=.95
 	g.elapsed=.04;g.traffic.update(.04)
 	assert(g.cars[0].step==1 and absf(g.cars[0].t-(.95+3.2*.04-1)*g.WorldSettings.CURVE_SPEED_FACTOR)<.0001)

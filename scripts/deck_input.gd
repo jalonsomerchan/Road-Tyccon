@@ -7,6 +7,7 @@ const REPEAT = 0.14
 var g
 var active_device = -1
 var axes: Dictionary = {}
+var page_triggers: Dictionary = {}
 var held: Dictionary = {}
 var stick = Vector2i.ZERO
 var navigation = Vector2i.ZERO
@@ -20,7 +21,7 @@ func _init(game) -> void: g=game
 
 func choose_device(device: int) -> void:
 	if device==active_device: return
-	active_device=device;axes.clear();held.clear();stick=Vector2i.ZERO;navigation=Vector2i.ZERO
+	active_device=device;axes.clear();page_triggers.clear();held.clear();stick=Vector2i.ZERO;navigation=Vector2i.ZERO
 
 func digit(value: float, previous: int) -> int:
 	if absf(value)>=PRESS_ZONE: return int(sign(value))
@@ -58,6 +59,11 @@ func handle(event: InputEvent) -> bool:
 		if active_device<0 and absf(event.axis_value)<(0.12 if event.axis in [JOY_AXIS_TRIGGER_LEFT,JOY_AXIS_TRIGGER_RIGHT] else PRESS_ZONE): return true
 		choose_device(event.device)
 		axes[event.axis]=event.axis_value
+		if event.axis in [JOY_AXIS_TRIGGER_LEFT,JOY_AXIS_TRIGGER_RIGHT]:
+			if event.axis_value<.3: page_triggers.erase(event.axis)
+			elif event.axis_value>=.65 and not page_triggers.has(event.axis):
+				page_triggers[event.axis]=true
+				if g.panel=="catalog": g.construction_catalog.change_page(-1 if event.axis==JOY_AXIS_TRIGGER_LEFT else 1)
 		if absf(event.axis_value)>PRESS_ZONE: g.last_pad=true;g.hover_cell=g.NO_CELL
 		if event.axis==JOY_AXIS_LEFT_X: stick.x=digit(event.axis_value,stick.x)
 		elif event.axis==JOY_AXIS_LEFT_Y: stick.y=digit(event.axis_value,stick.y)

@@ -70,9 +70,13 @@ Las **curvas y los giros reducen la velocidad al 60 %** (un 40 % menos), ajustab
 
 ## Región y ciudades
 
-El mapa empieza con **2.048 × 2.048 casillas** y se amplía al explorar, sin un borde de juego fijo. Las regiones descubiertas son de 1.024 × 1.024; el terreno se materializa bajo demanda en bloques de 32 × 32 con una caché limitada. Se puede avanzar en cualquier dirección, incluidas coordenadas negativas. El guardado conserva las regiones descubiertas, sus ciudades, la semilla y las modificaciones; las zonas visitadas no cambian ni duplican ciudades al regresar.
+El mapa empieza con **1.024 × 1.024 casillas** y se amplía al explorar, sin un borde de juego fijo. Las regiones descubiertas son de 1.024 × 1.024; el terreno se materializa bajo demanda en bloques de 32 × 32 con una caché limitada. Se puede avanzar en cualquier dirección, incluidas coordenadas negativas. El guardado conserva las regiones descubiertas, sus ciudades, la semilla y las modificaciones; las zonas visitadas no cambian ni duplican ciudades al regresar.
 
-Las dos primeras ciudades, Valverde y Los Olmos, empiezan alineadas a 100 casillas de distancia, con sus accesos enfrentados y terreno transitable entre ellas para facilitar la primera conexión. La región empieza con las 400 ciudades ya generadas y repartidas por la región inicial. Todas las ciudades, incluida la pareja inicial, mantienen una distancia mínima de 100 casillas entre sí. Hay bosques, praderas, ríos, montañas y roquedos. Las zonas nuevas generan también ciudades al descubrirlas, con hasta 49 emplazamientos por región y sin un límite total de ciudades. Su aparición depende de la exploración, no del tiempo. Las ciudades nuevas respetan la separación y evitan las carreteras existentes. Las ciudades crecen con el tiempo y los viajes recibidos, y pueden disminuir.
+Las dos primeras ciudades, Valverde y Los Olmos, empiezan alineadas a 100 casillas de distancia, con sus accesos enfrentados y terreno transitable entre ellas para facilitar la primera conexión. La región genera al inicio las ciudades que caben respetando la separación configurada (objetivo: 400; con la región compacta actual caben aproximadamente cien). Todas las ciudades, incluida la pareja inicial, mantienen una distancia mínima de 100 casillas entre sí. Hay bosques, praderas, ríos, lagos, montañas y roquedos. Las zonas nuevas generan también ciudades al descubrirlas, con hasta 49 emplazamientos por región y sin un límite total de ciudades. Su aparición depende de la exploración, no del tiempo. Las ciudades nuevas respetan la separación y evitan las carreteras existentes. Las ciudades crecen con el tiempo y los viajes recibidos, y pueden disminuir.
+
+Las dos ciudades iniciales tienen ahora radio 4 (9 × 9 casillas). Las demás poblaciones nuevas varían entre radios 2 y 4, con media 3, según su posición y semilla. Cada estilo admite cuatro variantes de trazado y más variación de jardines, manteniendo calles conectadas y salidas válidas. Las ciudades ya guardadas conservan sus tamaños y su identidad; las que se descubran después reciben la nueva variedad.
+
+Los lagos se generan en cuencas elípticas de distintos tamaños, proporciones y costas irregulares. Son agua real: los coches necesitan puentes para cruzarlos y el detalle y la vista regional muestran el mismo terreno. Las partidas nuevas los incluyen desde el inicio; al cargar partidas anteriores, aparecen en regiones aún sin explorar y se conserva el terreno de todas las regiones ya conocidas. La semilla, los ajustes de lagos y esta protección se guardan con la partida.
 
 Las ciudades tienen cuatro estilos visuales persistentes: villa mediterránea, ciudad jardín, centro urbano y barrio industrial. Una semilla propia varía edificios, orientaciones, jardines, densidad y trazado de calles; su identidad se mantiene al crecer y al cargar, incluidas las partidas antiguas. Hay siete edificios nuevos y un parque en `assets/sprites/city-v2/`, además de ocho coches cenitales en `assets/sprites/vehicles-v2/`. Se dibujan con el atlas y las mallas por bloques para conservar el rendimiento del zoom.
 
@@ -84,7 +88,7 @@ Al crecer o reducirse, la ciudad sincroniza su plano y retira los tramos automá
 
 ## Accidentes, clima y abandono
 
-Los incendios, nevadas y accidentes muestran un aviso con su ubicación. **A / Enter** lleva al evento; **B / Esc** descarta únicamente el aviso. Funciona con mando, teclado y botones de ratón, también sobre los menús. Los avisos permanecen hasta atenderlos y se presentan en orden; los sucesos repetidos de un mismo tipo y casilla se agrupan. Se conservan al guardar y cargar. Al ir al evento se mantiene el inicio de construcción pendiente; al descartar, se conserva el menú y la selección.
+Los incendios, nevadas y accidentes muestran un aviso con su ubicación. **A / Enter** lleva al evento; **B / Esc** descarta únicamente el aviso. Funciona con mando, teclado y botones de ratón, también sobre los menús. Los avisos permanecen hasta atenderlos. Los accidentes aparecen inmediatamente por delante de los avisos meteorológicos, que siguen pendientes; un accidente visible conserva su destino aunque lleguen más avisos. El resto se presenta en orden; los sucesos repetidos de un mismo tipo y casilla se agrupan. Se conservan al guardar y cargar. Al ir al evento se mantiene el inicio de construcción pendiente; al descartar, se conserva el menú y la selección.
 
 Cada uno de los 24 tipos tiene **nueve sprites adicionales**, manteniendo sus materiales y carriles: ardiendo, nevado, estropeado, muy estropeado, estropeadísimo, cortado, desapareciendo, rotonda y semáforo. Son 216 sprites adicionales; las rotondas miden 192×192 píxeles para su huella de 3×3. Hay también cuatro fotogramas de incendio y cuatro variantes de nieve. Los originales y prompts de ImageGen están en `assets/source/road-conditions/` y `assets/source/environment/`; los PNG de juego en las carpetas equivalentes de `assets/sprites/`.
 
@@ -144,7 +148,7 @@ El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Obje
 | Herramienta anterior / siguiente | Q / Tab; 1–5 herramientas, 6 menú | LB / RB (L1 / R1); excluye Menú |
 | Selector del tipo de carretera | Y / V | Y con Construir seleccionado |
 | Elegir carretera en catálogo | Flechas, Enter | Cruceta / stick, A |
-| Modo carretera / rotonda / semáforo | Botones del catálogo / X | X dentro del catálogo |
+| Carreteras, rotondas y semáforos | Pestañas y ficha del catálogo | Y → Disponibles / Tráfico → A |
 | Zoom | +/−, rueda, RePág / AvPág | LT / RT (L2 / R2) |
 | Siguiente acceso de ciudad | G | R3 |
 | Pausa / reanudar | Espacio | L3; recupera la velocidad anterior |
@@ -152,7 +156,7 @@ El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Obje
 | Menú principal | 6 / F10; botón Menú | ☰ (Menu / Start) |
 | Cancelar / volver / cerrar | B / Esc / clic derecho | B |
 | Reparar / mejorar al tipo elegido | Enter / U con vía cerrada | A / X con Arreglar seleccionado |
-| Rotonda / semáforo / carretera normal | O / T / P | Y → catálogo, X cambia modo, A confirma |
+| Rotonda / semáforo / carretera normal | O / T / P | Y → catálogo, elegir tarjeta y A |
 | Inspección de selección | I; bocadillo automático | Bocadillo automático |
 | Localizar nieve / incendio reciente | J | — |
 | Mapa interactivo | M | View |
@@ -165,7 +169,13 @@ El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Obje
 
 En la lista de ciudades, ↑ / ↓ elige, A / Enter va y X / Y cambia página. En Contabilidad, la cruceta / stick elige filtros y botones de desplazamiento; A los activa y LB/RB o X/Y cambian el filtro. El menú no detiene el tiempo; usa pausa cuando lo necesites.
 
-### Controles de Steam Deck
+### Catálogo de construcción
+
+**Y / V** abre un catálogo con seis pestañas: **Disponibles, Caminos, Carreteras, Ciudad, Puentes y Tráfico**. Disponibles muestra únicamente lo desbloqueado, con semáforos y rotondas al principio. Las demás categorías ordenan primero las opciones disponibles y permiten consultar las fichas de las bloqueadas, indicando el nivel necesario. Hay seis tarjetas por página, iconos grandes y una ficha con velocidad, capacidad, carriles, precio, obra, reparación y conservación. Previsualizar o cancelar no cambia el tipo de vía elegido.
+
+En Steam Deck, **LB/RB** cambia de pestaña, **LT/RT** de página, la cruceta o el stick mueve el foco, **A** elige directamente la tarjeta y **B** vuelve. En la pestaña Tráfico se puede elegir un semáforo o una rotonda sin pasar por una carretera. Para la rotonda, **X/Y** cambia el material antes de confirmar. En teclado, **Q/Tab** cambia de pestaña, **RePág/AvPág** de página y **Enter** elige. Con ratón, un clic previsualiza y el botón de la ficha confirma.
+
+## Controles de Steam Deck
 
 La navegación de mando se procesa antes de la interfaz de Godot, por una sola vía. El foco azul marca el botón que ejecutará A, incluidos los controles inferiores de Guardar, Cargar, Ayuda y Velocidad. No depende de haber dibujado ya el menú. Se descartan también los Enter/Esc/clic duplicados que Steam Input pueda emitir junto a un botón de mando. El stick usa zona muerta y repetición con pausa inicial; mantener A no confirma una segunda pantalla y el movimiento pasivo del ratón no cambia la selección del mando. Las confirmaciones empiezan en Cancelar. En el menú principal, **X guarda** y **Y abre Ayuda**; cargar requiere seleccionar Cargar y pulsar A. En escenarios, B cancela primero la preparación del reto y después cierra la pantalla.
 
@@ -174,7 +184,7 @@ El zoom de juego llega ahora a **0,5 píxeles por casilla**: permite ver **16 ve
 
 **☰ (Menu/Start)** abre el menú principal y vuelve a cerrarlo. **View** abre/cierra el mapa. **B** vuelve a la pantalla anterior, cierra un cuadro, descarta un aviso o cancela el trazado o modo de construcción; en el mapa de juego, si no hay nada que cancelar, no hace nada. B nunca abre el menú desde el juego.
 
-**L1/R1** recorren únicamente las cinco herramientas de construcción, cierre, reparación, demolición y tala. Dentro de un panel cambian de página, columna, filtro o pestaña, manteniéndolo abierto. **L3** pausa/reanuda y recupera la velocidad que había antes de pausar. **L2/R2** controlan el zoom; **R3** va a la siguiente ciudad. **A** confirma y **Y** abre el catálogo desde cualquier herramienta. **X** cambia el trazado; en el catálogo cambia carretera/rotonda/semáforo y, con Reparar, permite mejorar. La consola de trucos es una opción seleccionable del menú, con A para abrirla y B para cerrarla.
+**L1/R1** recorren únicamente las cinco herramientas de construcción, cierre, reparación, demolición y tala. Dentro de un panel cambian de página, columna, filtro o pestaña, manteniéndolo abierto. **L3** pausa/reanuda y recupera la velocidad que había antes de pausar. **L2/R2** controlan el zoom; **R3** va a la siguiente ciudad. **A** confirma y **Y** abre el catálogo desde cualquier herramienta. **X** cambia el trazado; en el catálogo cambia el material de la rotonda o la página y, con Reparar, permite mejorar. La consola de trucos es una opción seleccionable del menú, con A para abrirla y B para cerrarla.
 
 En teclado, **6/F10** abre el menú; **B/Esc/clic derecho** solo cierran, vuelven o cancelan. **Q/Tab** recorren las cinco herramientas sin abrir el menú; Tab dentro de un panel recorre su selección.
 
@@ -193,12 +203,20 @@ Durante una partida, F8 abre el cuadro de trucos. Escribe un código y pulsa Ent
 | `reveal` | Descubre 5 × 5 regiones alrededor de la selección, incluyendo nuevas ciudades. |
 | `help` | Muestra los códigos disponibles. |
 
+## Incendios, desgaste y cruces
+
+El fuego corta el paso inmediatamente: los coches buscan un desvío o esperan sin perder su viaje. Cada casilla ardiendo pierde 2 puntos de conservación por segundo de simulación; una vía al 100 % puede quedar destruida en 50 segundos. Los accesos urbanos destruidos también deben reconstruirse. Los bomberos despejan las rutas que todavía conservan carretera; las obras y reparaciones se pausan mientras arden.
+
+Las vías abiertas pierden 0,08 puntos de conservación por segundo, más 0,14 por cada coche que las utiliza. El desgaste ordinario conserva un mínimo del 5 %; el incendio puede consumir la carretera por completo. Estos valores también se aplican a partidas cargadas.
+
+En los cruces de tres o más brazos sin semáforo activo, cada coche para 0,7 segundos antes de entrar y cede el paso al tráfico que ya está cruzando. Las entradas se ordenan por llegada y mantienen un margen mínimo de 0,4 segundos, formando pequeñas colas. Con semáforo activo se obedecen sus luces sin esa parada adicional; al apagarlo se vuelve a ceder el paso. Las rotondas mantienen su circulación propia. Las rutas tienen en cuenta el tiempo de parada y los guardados conservan la espera acumulada.
+
 ## Configurar el juego
 
 Edita `scripts/world_settings.gd` y reinicia la ejecución. Los parámetros están agrupados y comentados, con tiempos en segundos de simulación (salvo el autoguardado, que usa segundos reales), importes en euros y riesgos entre 0 y 1. Estos son los ajustes básicos de generación:
 
 ```gdscript
-const INITIAL_SIDE = 2048            # Casillas por lado; múltiplo de 1024.
+const INITIAL_SIDE = 1024            # Casillas por lado; múltiplo de 1024.
 const INITIAL_CITY_COUNT = 400       # Ciudades al empezar.
 const MIN_CITY_DISTANCE = 100        # Separación mínima entre centros.
 const START_CITY_DISTANCE = 100      # Distancia de la pareja inicial.
@@ -210,7 +228,7 @@ Además puedes ajustar:
 | Grupo | Ejemplos de parámetros |
 | --- | --- |
 | Terreno | `TERRAIN`: frecuencia del relieve, umbrales de bosques/montañas/rocas, separación y anchura de ríos. |
-| Ciudades | `START_CITY_RADIUS`, `NEW_CITY_RADIUS`, `CITY_ACCESS_LENGTH`, tipos de calle y avenida, población y crecimiento/decrecimiento. |
+| Ciudades | `START_CITY_RADIUS`, `NEW_CITY_RADIUS`, `CITY_RADIUS_VARIATION`, `CITY_ACCESS_LENGTH`, tipos de calle y avenida, población y crecimiento/decrecimiento. |
 | Viajes | `DEMAND_INTERVAL`, `DEMAND_BASE_CARS`, `DEMAND_MAX_CARS`, `DEMAND_POPULATION_STEP`, `MAX_VISIBLE_CARS`. |
 | Economía | `STARTING_MONEY`, `TRIP_BASE_FARE`, `TRIP_FARE_PER_CELL` y multiplicadores según duración del viaje. |
 | Obras | Costes y tiempos de mejora, reparación, demolición y tala; desgaste de las vías y verdes iniciales de los semáforos. |
@@ -234,9 +252,13 @@ El equilibrio inicial contempla 80.000 €, 400 ciudades generadas desde el inic
 
 ## Rendimiento del zoom
 
-El terreno y los edificios se dibujan en bloques de 32 × 32 con mallas y un atlas compartido, conservando los sprites originales. Mover la cámara o cambiar el zoom transforma los bloques ya dibujados. La caché mantiene como máximo 48 bloques y actualiza solo los afectados por cambios de terreno, tala, construcción o crecimiento urbano; también invalida las riberas vecinas. Las carreteras visibles, coches, obras, clima e interfaz conservan sus capas y animación independientes. Las previsualizaciones de tramos largos se recortan a la cámara; la construcción sigue usando el trazado completo.
+Por debajo de zoom 8, la vista regional reutiliza mosaicos del terreno en coordenadas del mundo. Todos comparten un atlas de 512 × 512 y la caché está limitada a 192 mosaicos; mover la cámara solo genera los bordes nuevos. Los cambios de carreteras o de capa no regeneran el terreno. Los nombres visibles están limitados a 32 y las carreteras regionales se dibujan por grupos.
 
-En la prueba gráfica pausada a 1280 × 800, sin límite de FPS, en un Mac M1 Pro, el zoom mínimo pasó de unos 122 ms a unos 3 ms por fotograma. El desplazamiento dio una mediana cercana a 3 ms, con picos al entrar en bloques nuevos. Son medidas de esta escena y máquina; no equivalen a una prueba física en Steam Deck.
+La exploración durante el movimiento pone las nuevas poblaciones en una cola con un presupuesto de 1,5 ms por fotograma. Cada población incorpora sus calles y su componente aislada al grafo existente; no se reconstruye toda la red. El trabajo pendiente se guarda para continuar al cargar. El dibujo no descubre ni genera mundo. Las cachés de calles y decorado también reciben las nuevas ciudades de forma incremental, y el minimapa reutiliza su textura con una actualización máxima cada medio segundo. El desplazamiento regional es continuo, a 280 píxeles por segundo con cualquier zoom; Mayús o mantener el mando acelera al doble.
+
+El desgaste y las obras se actualizan cada 0,1 segundos de simulación, conservando el tiempo acumulado en el guardado. El abandono revisa solo vías candidatas y el tráfico agrupa los coches por tramo y por casilla para evitar comparaciones entre todos los vehículos. Los coches, incendios y semáforos siguen actualizándose con la simulación.
+
+`tests/movement_benchmark.gd`, ejecutado en una sesión gráfica con `-- --test-mode`, mide movimiento real con la simulación activa al zoom mínimo. Añade `--warm` para medir con toda la zona cargada. En la prueba local con 640 ciudades y 11.207 casillas de carretera, el fotograma pasó de una mediana de 27,24 ms a 6,35 ms con la zona cargada; son medidas de este equipo, no una garantía de FPS en Steam Deck. `tests/performance_regressions.gd` comprueba la generación pendiente y su guardado, la equivalencia del grafo incremental, la reutilización y límite de mosaicos, las invalidaciones locales, el movimiento continuo y la separación de vehículos.
 
 ## Verificación y recursos
 

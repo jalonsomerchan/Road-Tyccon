@@ -5,6 +5,8 @@ const MAX_VISIBLE_CARS = Settings.MAX_VISIBLE_CARS
 const DEMAND_INTERVAL = Settings.DEMAND_INTERVAL
 const FOLLOWING_GAP = 0.76 # Longitud de coche más margen, en casillas de carretera.
 var g
+var junctions
+var occupants: Dictionary = {}
 var pending: Dictionary = {}
 var history: Dictionary = {}
 var queued = 0
@@ -14,8 +16,11 @@ var pending_by_city: Dictionary = {}
 
 func _init(game) -> void:
 	g = game
+	junctions = preload("res://scripts/junction_control.gd").new(g)
 
 func reset() -> void:
+	junctions.reset()
+	occupants.clear()
 	pending.clear()
 	history.clear()
 	queued = 0
@@ -174,7 +179,12 @@ func update(dt: float) -> void:
 func step_traffic(dt: float) -> void:
 	var ready: Array = []
 	var prior_progress: Dictionary = {}
-	for car in g.cars: prior_progress[car.ticket] = car.t
+	occupants.clear()
+	for car in g.cars:
+		prior_progress[car.ticket] = car.t
+		var p = position(car)
+		if not occupants.has(p): occupants[p] = []
+		occupants[p].append(car)
 	for car in g.cars:
 		var p = position(car)
 		if car.step+1<car.path.size():
@@ -210,27 +220,40 @@ func step_traffic(dt: float) -> void:
 		var v = driving_speed(car)
 		car.step_speed=v
 		var r = g.roads[p]
-		r.hp = maxf(Settings.ROAD_MIN_HEALTH,r.hp-dt*Settings.ROAD_TRAFFIC_WEAR)
+		r.hp = maxf(minf(r.hp,Settings.ROAD_MIN_HEALTH),r.hp-dt*Settings.ROAD_TRAFFIC_WEAR)
 		car.t = minf(1.999999, car.t + dt * v)
-	# Mantener separación en cada tramo dirigido. Al limitar el avance del coche
-	# que va detrás, también queda detenido cuando el de delante espera en un cruce.
-	for follower in g.cars:
-		if follower.get("crash_left", 0.0) > 0 or follower.path.size() < 2 or follower.step >= follower.path.size()-1: continue
-		var follow_p: Vector2i = position(follower)
-		var follow_q: Vector2i = Vector2i(follower.path[follower.step+1])
-		var leader_progress = INF
-		for leader in g.cars:
-			if leader == follower or leader.path.size() < 2 or leader.step >= leader.path.size()-1: continue
-			if position(leader) != follow_p or Vector2i(leader.path[leader.step+1]) != follow_q: continue
-			if prior_progress.get(leader.ticket, leader.t) > prior_progress.get(follower.ticket, follower.t) and leader.t < leader_progress:
-				leader_progress = leader.t
-		if leader_progress < INF:
-			var safe_progress = maxf(0.0, leader_progress-FOLLOWING_GAP)
-			if follower.t > safe_progress:
-				follower.t = safe_progress
-				follower.blocked = true
+		junctions.limit_progress(car)
+	# Agrupar por tramo evita comparar cada coche con todos los demás.
+	var segments: Dictionary = {}
 	for car in g.cars:
-		if car.t >= 1 and car.step+1 < car.path.size():
+		if car.path.size()<2 or car.step>=car.path.size()-1: continue
+		var p = position(car)
+		var q = Vector2i(car.path[car.step+1])
+		var key = Vector4i(p.x,p.y,q.x,q.y)
+		if not segments.has(key): segments[key] = []
+		segments[key].append(car)
+	for group in segments.values():
+		if group.size()<2: continue
+		group.sort_custom(func(a,b): return prior_progress[a.ticket]>prior_progress[b.ticket])
+		var leader_progress = INF
+		var previous = INF
+		var tied_progress = INF
+		for car in group:
+			var before: float = prior_progress[car.ticket]
+			if before<previous:
+				leader_progress=minf(leader_progress,tied_progress)
+				tied_progress=INF;previous=before
+			if car.get("crash_left",0.0)<=0 and leader_progress<INF:
+				var safe = maxf(0.0,leader_progress-FOLLOWING_GAP)
+				if car.t>safe: car.t=safe;car.blocked=true
+			tied_progress=minf(tied_progress,car.t)
+	junctions.update(dt,prior_progress)
+	for car in g.cars:
+		if car.t >= 1 and car.step+1 < car.path.size() and car.get("crash_left",0.0)<=0:
+			var p = position(car)
+			var q = Vector2i(car.path[car.step+1])
+			if not g.road_open(p) or not g.road_open(q) or not g.edge_allowed(p,q) or not g.incidents.signal_allows(q,q-p): continue
+			if junctions.uncontrolled(q) and junctions.grants.get(q,-1)!=car.ticket: continue
 			ready.append({"car":car,"p":position(car),"q":Vector2i(car.path[car.step+1])})
 	ready.sort_custom(func(a,b): return a.car.ticket < b.car.ticket)
 	var finished: Dictionary = {}
@@ -278,7 +301,7 @@ func has_following_gap(move: Dictionary) -> bool:
 	# Si ya hay un coche entrando en la casilla de destino por el mismo sentido,
 	# espera hasta que avance lo suficiente para dejar sitio al siguiente.
 	var incoming: Vector2 = Vector2(move.q-move.p).normalized()
-	for other in g.cars:
+	for other in occupants.get(move.q,[]):
 		if other == move.car or other.path.size() < 2 or other.step >= other.path.size()-1: continue
 		if position(other) != move.q: continue
 		var next: Vector2i = Vector2i(other.path[other.step+1])
@@ -296,6 +319,9 @@ func spawn_has_following_gap(start: Vector2i, next: Vector2i) -> bool:
 
 func commit_move(move: Dictionary, finished: Dictionary, release: bool = true) -> void:
 	var car = move.car
+	if occupants.has(move.p): occupants[move.p].erase(car)
+	if not occupants.has(move.q): occupants[move.q] = []
+	occupants[move.q].append(car)
 	if release: g.density[move.p] = maxi(0,int(g.density.get(move.p,1))-1)
 	g.density[move.q] = int(g.density.get(move.q,0))+1
 	var remaining_time = maxf(0,car.t-1)/maxf(0.001,car.get("step_speed",driving_speed(car)))
@@ -303,10 +329,13 @@ func commit_move(move: Dictionary, finished: Dictionary, release: bool = true) -
 	car.step += 1
 	car.t = remaining_time*driving_speed(car)
 	car.blocked = false
+	junctions.entered(car,move.q)
+	junctions.limit_progress(car)
 	g.incidents.used(move.q)
 	if car.step >= car.path.size()-1 and move.q == g.cities[car.dest].pos:
 		complete(car)
 		finished[car.ticket] = true
+		occupants[move.q].erase(car)
 		g.density[move.q] = maxi(0,int(g.density.get(move.q,1))-1)
 
 func complete(car: Dictionary) -> void:
@@ -335,10 +364,11 @@ func snapshot() -> Dictionary:
 		data.pos = position(car)
 		data.next = Vector2i(car.path[mini(car.step+1,car.path.size()-1)])
 		vehicles.append(data)
-	return {"pending":pending, "queued":queued, "ticket":next_ticket, "vehicles":vehicles}
+	return {"pending":pending, "queued":queued, "ticket":next_ticket, "vehicles":vehicles,"junctions":junctions.snapshot()}
 
 func restore(data: Dictionary) -> void:
 	reset()
+	junctions.restore(data.get("junctions",{}))
 	pending = data.get("pending", {})
 	queued = data.get("queued", 0)
 	for key in pending:
@@ -356,7 +386,7 @@ func restore(data: Dictionary) -> void:
 		if g.retired_city_cells.has(start):
 			start=g.CityRoads.nearest_street(g,start,g.retired_city_cells[start]);next=start
 		var city = g.city_at(start)
-		if city>=0 and not g.roads.has(start):
+		if city>=0 and not g.roads.has(start) and not g.demolished_access_tiles.has(start):
 			var nearest = start
 			var distance = INF
 			for p in g.roads:

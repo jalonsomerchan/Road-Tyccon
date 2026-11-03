@@ -72,7 +72,7 @@ func quote(targets: Array, partial: bool) -> float:
 func repair(targets: Array, partial: bool, automatic: bool = false) -> bool:
 	var valid: Array = []
 	for p in targets:
-		if not g.roads.has(p) or g.maintenance.jobs.has(p): continue
+		if not g.roads.has(p) or g.maintenance.jobs.has(p) or g.incidents.fire.has(p): continue
 		var road = g.roads[p]
 		if road.hp<99.9 and road.work<=0 and not service_jobs.has(p): valid.append(p)
 	var cost = quote(valid,partial)
@@ -128,6 +128,7 @@ func deploy(kind: String, center: Vector2i) -> void:
 	g.transact(-cost,"services","Bomberos" if kind=="fire" else "Quitanieves")
 	for p in affected: incident.erase(p)
 	if kind=="fire":
+		g.graph_dirty=true
 		# Quitar también las fuentes extinguidas, para que no vuelvan a propagarse.
 		for zone in g.incidents.zones:
 			for p in affected: zone.cells.erase(p)
@@ -181,6 +182,7 @@ func update(dt: float) -> void:
 	if dt<=0: return
 	for p in service_jobs.keys():
 		if not g.roads.has(p): service_jobs.erase(p); continue
+		if g.incidents.fire.has(p): continue
 		var job = service_jobs[p]
 		job.left=maxf(0,job.left-dt)
 		if job.left>0: continue

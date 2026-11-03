@@ -18,6 +18,9 @@ var weather_clock = 0.0
 var last_alert = preload("res://scripts/world_terrain.gd").NO_CELL
 var protection_revision = -1
 var protected_tiles: Dictionary = {}
+var abandonment_candidates: Array = []
+var abandonment_revision = -1
+var abandonment_size = -1
 var rules = Settings.incident_rules()
 # Tiempos de simulación confirmados por el usuario.
 
@@ -39,6 +42,7 @@ func reset() -> void:
 	last_alert = g.NO_CELL
 	protection_revision = -1
 	protected_tiles.clear()
+	abandonment_candidates.clear();abandonment_revision = -1;abandonment_size = -1
 
 func protected_access(p: Vector2i) -> bool:
 	if g.roads.has(p) and g.roads[p].has("urban_city"): return true
@@ -93,7 +97,13 @@ func update(dt: float) -> void:
 	for p in snow.keys():
 		if snow[p] <= g.elapsed: snow.erase(p)
 	for p in fire.keys():
-		if fire[p] <= g.elapsed: fire.erase(p)
+		var active_dt = clampf(float(fire[p])-(g.elapsed-dt),0.0,dt)
+		if g.roads.has(p):
+			g.roads[p].hp = maxf(0.0,g.roads[p].hp-Settings.FIRE_ROAD_DAMAGE*active_dt)
+			if g.roads[p].hp <= 0: burn_road(p)
+		if fire[p] <= g.elapsed:
+			fire.erase(p)
+			if g.roads.has(p): g.graph_dirty = true
 	for i in range(zones.size() - 1, -1, -1):
 		var z = zones[i]
 		if g.elapsed >= z.until:
@@ -117,9 +127,14 @@ func update(dt: float) -> void:
 				else: ignite(seed)
 				g.gameplay.weather_dispatched()
 	if rules.abandon_enabled:
+		if abandonment_revision!=g.road_revision or abandonment_size!=g.roads.size():
+			abandonment_candidates.clear()
+			for p in g.roads:
+				if not protected_access(p): abandonment_candidates.append(p)
+			abandonment_revision=g.road_revision;abandonment_size=g.roads.size()
 		var remove: Array = []
-		for p in g.roads:
-			if g.roads[p].work <= 0 and fade(p) >= 1: remove.append(p)
+		for p in abandonment_candidates:
+			if g.roads.has(p) and g.roads[p].work <= 0 and fade(p) >= 1: remove.append(p)
 		for p in remove: erase_road(p)
 
 func snow_zone(center: Vector2i, radius: int, duration: float = -1) -> void:
@@ -136,8 +151,9 @@ func ignite(p: Vector2i, duration: float = -1) -> void:
 	last_alert = p
 	var life: float = rules.fire_duration if duration < 0 else duration
 	fire[p] = g.elapsed + life
+	g.graph_dirty = true
 	zones.append({"cells":[p], "until":g.elapsed + life, "clock":0.0})
-	g.event_notices.push("fire",p,"El fuego se está extendiendo por la zona")
+	g.event_notices.push("fire",p,"Incendio · Paso cortado y carreteras destruyéndose")
 
 func spread_fire(zone: Dictionary) -> void:
 	var candidates: Array = []
@@ -151,6 +167,16 @@ func spread_fire(zone: Dictionary) -> void:
 	var p = candidates[g.rng.randi_range(0, candidates.size() - 1)]
 	fire[p] = g.elapsed + rules.fire_duration
 	zone.cells.append(p)
+	if g.roads.has(p): g.graph_dirty = true
+
+func burn_road(p: Vector2i) -> void:
+	var cells = ring_cells(roundabout_cells[p]) if roundabout_cells.has(p) else [p]
+	g.services.invalidate_undo(cells)
+	for cell in cells:
+		if protected_access(cell): g.demolished_access_tiles[cell] = true
+		g.services.service_jobs.erase(cell)
+		signals.erase(cell)
+	erase_road(p,true)
 
 func erase_road(p: Vector2i, force: bool = false) -> void:
 	if protected_access(p) and not force: return

@@ -3,6 +3,7 @@ extends AStar2D
 const Settings = preload("res://scripts/world_settings.gd")
 const DIRECTIONS = [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]
 var minimum_step_cost = 0.0
+var junction_delays: Dictionary = {}
 
 func _estimate_cost(from_id: int, end_id: int) -> float:
 	return get_point_position(from_id).distance_to(get_point_position(end_id))*minimum_step_cost
@@ -73,7 +74,7 @@ func driving_path(start: int, destination: int, incoming: Vector2i = Vector2i.ZE
 		for next in get_point_connections(point):
 			var outgoing = Vector2i(get_point_position(next)-get_point_position(point))
 			var next_state: int = next*5+direction_index(outgoing)
-			var cost: float = costs[state]+get_point_weight_scale(point)/passage_factor(point,heading,outgoing)
+			var cost: float = costs[state]+get_point_weight_scale(point)/passage_factor(point,heading,outgoing)+junction_delays.get(next,0.0)
 			if cost>=float(costs.get(next_state,INF)): continue
 			costs[next_state]=cost
 			previous[next_state]=state

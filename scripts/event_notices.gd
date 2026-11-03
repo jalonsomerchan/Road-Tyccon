@@ -17,6 +17,17 @@ func reset() -> void:
 
 func push(kind: String, position: Vector2i, description: String) -> void:
 	if not TITLES.has(kind) or not g.inside(position): return
+	# Un accidente no debe quedar oculto tras un aviso meteorológico sin responder.
+	# Agruparlo en cualquier posición evita perder un siniestro entre otros avisos.
+	if kind=="accident":
+		for i in pending.size():
+			var notice=pending[i]
+			if notice.kind!=kind or notice.pos!=position: continue
+			notice.count+=1;notice.description=description
+			if pending[0].kind!="accident":
+				pending.remove_at(i);pending.push_front(notice)
+			g.queue_redraw()
+			return
 	# Agrupar sucesos repetidos en la misma casilla sin cambiar el destino del aviso.
 	if not pending.is_empty():
 		var last = pending.back()
@@ -25,9 +36,12 @@ func push(kind: String, position: Vector2i, description: String) -> void:
 			last.description=description
 			return
 	sequence+=1
-	# El aviso visible permanece estable incluso durante una acumulación de accidentes.
+	# Un accidente visible conserva su destino aunque lleguen más sucesos.
 	if pending.size()>=MAX_PENDING: pending.remove_at(1)
-	pending.append({"id":sequence,"kind":kind,"pos":position,"description":description,"count":1,"at":g.elapsed})
+	var notice={"id":sequence,"kind":kind,"pos":position,"description":description,"count":1,"at":g.elapsed}
+	if kind=="accident" and not pending.is_empty() and pending[0].kind!="accident": pending.push_front(notice)
+	else: pending.append(notice)
+	g.queue_redraw()
 
 func respond(id: int, go: bool) -> void:
 	if pending.is_empty() or pending[0].id!=id: return

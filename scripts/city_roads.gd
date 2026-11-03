@@ -3,6 +3,36 @@ extends RefCounted
 const Design = preload("res://scripts/city_design.gd")
 const Settings = preload("res://scripts/world_settings.gd")
 
+static func append_isolated(g, index: int) -> Array:
+	var c = g.cities[index]
+	Design.ensure(c,index,g.world_seed)
+	var added: Array = []
+	for y in range(-c.radius,c.radius+1):
+		for x in range(-c.radius,c.radius+1):
+			var offset = Vector2i(x,y)
+			var p = c.pos+offset
+			g.city_cells[p] = index
+			if not Design.is_street(c,offset): continue
+			var r = g.city_road(Design.street_kind(c,offset),Design.local_cell(c,offset).y==0)
+			r.generated_city=index;r.generated_role="street";r.urban_city=index
+			g.roads[p]=r;g.road_nodes[p]={"kind":r.kind,"axis":r.axis};added.append(p)
+	c.accesses=[]
+	var directions = Design.exit_directions(c)
+	var preferred: Vector2i = c.access_dirs[0]
+	directions.sort_custom(func(a,b): return a==preferred and b!=preferred)
+	for d in directions:
+		var edge = c.pos+d*c.radius
+		var gate = edge+d
+		for step in range(1,Settings.CITY_ACCESS_LENGTH+1):
+			var p = edge+d*step
+			var r = g.city_road(Design.street_kind(c,edge-c.pos),d.x!=0)
+			r.generated_city=index;r.generated_role="access"
+			if step==1: r.access_city=index;g.city_connectors[p]=index
+			g.roads[p]=r;g.road_nodes[p]={"kind":r.kind,"axis":r.axis};added.append(p)
+		c.accesses.append({"gate":gate,"end":edge+d*Settings.CITY_ACCESS_LENGTH,"dir":d})
+	c.road_plan_version=2
+	return added
+
 static func sync(g) -> void:
 	g.retired_city_cells.clear()
 	var desired: Dictionary = {}

@@ -24,6 +24,9 @@ func run() -> void:
 		if zoom<8:
 			assert(g.visuals.overview.texture!=null and not g.visuals.terrain_cache.ground_root.visible)
 			assert(g.visuals.overview.labels.size()<=32)
+			for i in 240:
+				if g.visuals.overview.pending.is_empty(): break
+				await shot("zoom-loading-"+str(zoom),1)
 			var count: int = g.visuals.overview.builds
 			await shot("zoom-stable-"+str(zoom),3)
 			assert(g.visuals.overview.builds==count,"Stable regional frames reuse their terrain texture")

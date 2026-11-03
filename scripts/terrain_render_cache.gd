@@ -54,6 +54,22 @@ func index_roads() -> void:
 		var key = key_for(p)
 		city_stamps[key] = int(city_stamps.get(key,0))+g.point_id(p)+1+g.CityDesign.signature(g.cities[g.city_cells[p]])
 
+func append_city(added: Array, index: int, previous_revision: int) -> void:
+	if road_revision!=previous_revision: return
+	road_revision=g.road_revision
+	for p in added:
+		var key=key_for(p)
+		if not roads_by_block.has(key): roads_by_block[key]=[]
+		roads_by_block[key].append(p)
+		road_stamps[key]=int(road_stamps.get(key,0))+g.point_id(p)+1
+	var c=g.cities[index]
+	var signature=g.CityDesign.signature(c)
+	for y in range(-c.radius,c.radius+1):
+		for x in range(-c.radius,c.radius+1):
+			var p=c.pos+Vector2i(x,y)
+			var key=key_for(p)
+			city_stamps[key]=int(city_stamps.get(key,0))+g.point_id(p)+1+signature
+
 func prepare() -> void:
 	clock += 1
 	index_roads()

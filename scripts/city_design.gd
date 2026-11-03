@@ -11,6 +11,14 @@ static func ensure(city: Dictionary, index: int, world_seed: int) -> void:
 		city.design_seed = posmod(world_seed*48271+city.pos.x*73856093+city.pos.y*19349663+str(city.name).hash(),2147483647)
 	if not city.has("design_style"): city.design_style = posmod(index+world_seed,STYLES.size())
 
+static func initial_radius(pos: Vector2i, world_seed: int) -> int:
+	var variation=Settings.CITY_RADIUS_VARIATION
+	var hash_value=posmod(world_seed*48271+pos.x*73856093+pos.y*19349663,2147483647)
+	return clampi(Settings.NEW_CITY_RADIUS+posmod(hash_value,variation*2+1)-variation,1,Settings.CITY_MAX_RADIUS)
+
+static func variant(pos: Vector2i, world_seed: int) -> int:
+	return posmod(world_seed*71+pos.x*31+pos.y*17,4)
+
 static func noise(city: Dictionary, p: Vector2i) -> int:
 	return posmod(int(city.get("design_seed",0)) ^ (p.x*73856093) ^ (p.y*19349663),2147483647)
 
@@ -30,6 +38,12 @@ static func is_street(city: Dictionary, p: Vector2i) -> bool:
 	var side = 1 if seed%2==0 else -1
 	var other_side = 1 if (seed/2)%2==0 else -1
 	var spacing = Settings.CITY_STREET_BLOCK_SPACING
+	var variant_id=int(city.get("design_variant",0))
+	# Ramales separados por una manzana, conectados al eje principal y sin añadir salidas falsas.
+	if variant_id>0 and radius>=spacing and style!=1:
+		var branch_side=side if style==3 else (1 if variant_id%2 else -1)
+		var branch_length=mini(radius-1,1+variant_id)
+		if q.y==spacing*branch_side and q.x*other_side>0 and q.x*other_side<=branch_length: return true
 	match style:
 		0: return q.x==0 # Dos calles con manzanas entre sus brazos.
 		1:
@@ -70,7 +84,7 @@ static func cell(city: Dictionary, p: Vector2i) -> Dictionary:
 			return {"role":"garden","sprite":6+hash_value%3,"turns":0,"scale":0.58,"offset":Vector2.ZERO}
 		return {"role":"vacant","sprite":0,"turns":0,"scale":0.0,"offset":Vector2.ZERO}
 	if p==Vector2i(1,1): return {"role":"civic","sprite":6,"turns":0,"scale":0.86,"offset":Vector2.ZERO}
-	var green = [18,38,8,24][style]
+	var green = [18,38,8,24][style]+int(city.get("design_variant",0))*3
 	if hash_value%100<green:
 		if hash_value%7!=0:
 			return {"role":"garden","sprite":6+hash_value%3,"turns":0,"scale":0.48+float(hash_value%5)*0.025,"offset":Vector2.ZERO}
@@ -84,4 +98,4 @@ static func street_kind(city: Dictionary, p: Vector2i) -> int:
 	return Settings.AVENUE_ROAD_KIND if city.radius>=Settings.AVENUE_MIN_CITY_RADIUS and int(city.get("design_style",0))!=1 and local_cell(city,p).y==0 else Settings.RESIDENTIAL_ROAD_KIND
 
 static func signature(city: Dictionary) -> int:
-	return int(city.radius)*2147483647+int(city.get("design_seed",0))*5+int(city.get("design_style",0))
+	return int(city.radius)*2147483647+int(city.get("design_seed",0))*5+int(city.get("design_style",0))+int(city.get("design_variant",0))*97

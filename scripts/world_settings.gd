@@ -21,6 +21,10 @@ const EXPLORATION_CITY_ATTEMPTS = 24 # Intentos de buscar terreno por emplazamie
 ## bajar mountain_threshold genera más montañas. Anchura de río = semianchura.
 const TERRAIN = {
 	"noise_frequency":0.008, # Más alto: relieves más pequeños y frecuentes.
+	"lake_spacing":360.0, # Distancia entre posibles lagos.
+	"lake_chance":0.55, # Proporción de cuencas con agua.
+	"lake_min_radius":14.0,
+	"lake_max_radius":48.0,
 	"forest_threshold":0.06,
 	"mountain_threshold":0.43,
 	"rock_threshold":-0.48,
@@ -31,8 +35,9 @@ const TERRAIN = {
 }
 
 # CIUDADES Y CRECIMIENTO
-const START_CITY_RADIUS = 3 # Radio en casillas: lado = 2 × radio + 1.
-const NEW_CITY_RADIUS = 2
+const START_CITY_RADIUS = 4 # Radio en casillas: lado = 2 × radio + 1.
+const NEW_CITY_RADIUS = 3
+const CITY_RADIUS_VARIATION = 1 # Las nuevas poblaciones varían ±una casilla de radio.
 const CITY_STREET_BLOCK_SPACING = 3 # Al menos 3: dos parcelas entre calles paralelas.
 const CITY_ACCESS_LENGTH = 3 # Casillas de prolongación exterior de cada salida.
 const RESIDENTIAL_ROAD_KIND = 19 # Índices de scripts/catalog.gd: calle residencial.
@@ -68,8 +73,8 @@ const TRIP_MIN_TIME_MULTIPLIER = 0.15 # Viajes lentos: fracción mínima del ing
 const TRIP_MAX_TIME_MULTIPLIER = 2.5 # Tope para viajes rápidos.
 
 # CONSERVACIÓN Y OBRAS (precios/velocidades/capacidad de cada vía: catalog.gd)
-const ROAD_PASSIVE_WEAR = 0.0015 # Puntos de conservación por segundo abierta.
-const ROAD_TRAFFIC_WEAR = 0.007 # Puntos por coche y segundo sobre la casilla.
+const ROAD_PASSIVE_WEAR = 0.08 # Puntos de conservación por segundo abierta.
+const ROAD_TRAFFIC_WEAR = 0.14 # Puntos por coche y segundo sobre la casilla.
 const ROAD_MIN_HEALTH = 5.0
 const UPGRADE_COST_RATIO = 0.75 # Fracción del precio de la nueva vía.
 const REPAIR_COST_RATIO = 0.25 # Fracción del precio de construcción.
@@ -98,6 +103,11 @@ const WEATHER_INTERVAL = 180.0
 const WEATHER_SNOW_CHANCE = 0.5 # 0 solo incendios; 1 solo nieve.
 const SNOW_RADIUS = 6
 const SNOW_DURATION = 120.0
+const FIRE_ROAD_DAMAGE = 2.0 # Puntos de conservación por segundo ardiendo; puede destruir la vía.
+const JUNCTION_STOP_TIME = 0.7
+const JUNCTION_STOP_LINE = 0.45
+const JUNCTION_CLEAR_PROGRESS = 0.6
+const JUNCTION_HEADWAY = 0.4
 const FIRE_DURATION = 60.0
 const FIRE_SPREAD_INTERVAL = 5.0
 const ABANDONMENT_ENABLED = true
@@ -120,11 +130,15 @@ static func validate() -> void:
 	assert(INITIAL_CITY_COUNT>=2 and MIN_CITY_DISTANCE>0 and START_CITY_DISTANCE>=MIN_CITY_DISTANCE,"Revisa cantidad y separación de ciudades")
 	assert(EXPLORATION_CITY_GRID>0 and EXPLORATION_CITY_JITTER>=0 and EXPLORATION_CITY_ATTEMPTS>0,"Revisa parámetros EXPLORATION_CITY_…")
 	assert(START_CITY_RADIUS>=1 and NEW_CITY_RADIUS>=1 and CITY_MAX_RADIUS>=maxi(START_CITY_RADIUS,NEW_CITY_RADIUS),"Revisa radios de ciudades")
+	assert(TERRAIN.lake_spacing>0 and TERRAIN.lake_chance>=0 and TERRAIN.lake_chance<=1 and TERRAIN.lake_min_radius>0 and TERRAIN.lake_max_radius>=TERRAIN.lake_min_radius and TERRAIN.lake_max_radius<=TERRAIN.lake_spacing*.2,"Revisa frecuencia y tamaño de los lagos")
+	assert(CITY_RADIUS_VARIATION>=0 and NEW_CITY_RADIUS+CITY_RADIUS_VARIATION<=CITY_MAX_RADIUS,"Revisa la variación de tamaños de ciudad")
 	assert(CITY_STREET_BLOCK_SPACING>=3 and CITY_ACCESS_LENGTH>=1 and AVENUE_MIN_CITY_RADIUS>=1 and RESIDENTIAL_ROAD_KIND in range(24) and AVENUE_ROAD_KIND in range(24),"Revisa accesos e índices de vías urbanas")
 	assert(POPULATION_PER_RADIUS>0 and CITY_MIN_POPULATION>0 and CITY_GROWTH_INTERVAL>0,"Revisa población e intervalo de crecimiento")
 	assert(DEMAND_INTERVAL>0 and DEMAND_POPULATION_STEP>0 and DEMAND_MAX_CARS>0 and DEMAND_BASE_CARS>=0 and MAX_VISIBLE_CARS>0,"Revisa parámetros de tráfico")
 	assert(CURVE_SPEED_FACTOR>0 and CURVE_SPEED_FACTOR<=1,"CURVE_SPEED_FACTOR debe ser mayor que 0 y como máximo 1")
 	assert(TRIP_REFERENCE_SPEED>0 and TRIP_MIN_TIME_MULTIPLIER>=0 and TRIP_MAX_TIME_MULTIPLIER>=TRIP_MIN_TIME_MULTIPLIER,"Revisa ingresos por tiempo de viaje")
+	assert(FIRE_ROAD_DAMAGE>0 and JUNCTION_STOP_TIME>0 and JUNCTION_HEADWAY>0,"Revisa daño del fuego y tiempos de los cruces")
+	assert(JUNCTION_STOP_LINE>0 and JUNCTION_STOP_LINE<JUNCTION_CLEAR_PROGRESS and JUNCTION_CLEAR_PROGRESS<1,"Revisa las distancias de parada y salida del cruce")
 	assert(ROAD_MIN_HEALTH>0 and ROAD_MIN_HEALTH<=100 and ROAD_PASSIVE_WEAR>=0 and ROAD_TRAFFIC_WEAR>=0,"Revisa conservación")
 	assert(STARTING_MONEY>=0 and TRIP_BASE_FARE>=0 and TRIP_FARE_PER_CELL>=0,"Los importes no pueden ser negativos")
 	for value in [UPGRADE_COST_RATIO,REPAIR_COST_RATIO,REPAIR_BASE_TIME,REPAIR_TIME_PER_DAMAGE,DEMOLITION_COST_RATIO,DEMOLITION_TIME,LOGGING_COST,LOGGING_TIME,ACCIDENT_COST,ACCIDENT_STOP,CITY_SHRINK_GRACE,UNUSED_ROAD_DELAY]:

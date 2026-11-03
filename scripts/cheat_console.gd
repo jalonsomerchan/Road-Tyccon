@@ -184,6 +184,7 @@ func execute(value: String) -> Dictionary:
 			message="Zona nevada alrededor de "+str(g.cursor)+"."
 		"sun":
 			g.incidents.fire.clear();g.incidents.snow.clear();g.incidents.zones.clear()
+			g.graph_dirty=true
 			g.incidents.last_alert=g.NO_CELL
 			g.incidents.weather_clock=0
 			message="Nieve e incendios despejados."

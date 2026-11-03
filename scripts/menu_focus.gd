@@ -19,9 +19,7 @@ func model() -> Array:
 		"menu":
 			for i in g.MENU_ACTIONS.size(): result.append(entry(g.MENU_ACTIONS[i],Rect2(166+i%2*486,164+int(i/2)*104,462,92)))
 			for i in 4: result.append(entry(["save","load","help","speed"][i],Rect2(166+i*194,592,180,40),i!=1 or FileAccess.file_exists(g.save_path)))
-		"catalog":
-			for i in 24: result.append(entry("kind:"+str(i),Rect2(156+int(i/12)*486,195+i%12*36,470,33),g.gameplay.unlocked(i)))
-			for i in 3: result.append(entry("mode:"+["road","roundabout","signal"][i],Rect2(156+i*325,150,310,34)))
+		"catalog": result=g.construction_catalog.model()
 		"cities":
 			var start=int(g.city_list_index/6)*6
 			for i in range(start,mini(start+6,g.cities.size())):
@@ -63,6 +61,7 @@ func model() -> Array:
 
 func key() -> String:
 	if g.at_title: return "confirm" if g.title_confirm_new else "title"
+	if g.panel=="catalog": return "catalog:%d:%d"%[g.construction_catalog.tab,g.construction_catalog.page]
 	return g.panel+":"+str(g.gameplay_ui.tab if g.panel=="network" else (int(g.city_list_index/6) if g.panel=="cities" else ""))+":"+g.gameplay_ui.pending_scenario
 
 func sync(preferred: String = "") -> void:
@@ -76,7 +75,7 @@ func sync(preferred: String = "") -> void:
 			if context=="confirm": current="title_cancel"
 			elif context=="title": current="title:"+["new","load","quit"][clampi(g.title_index,0,2)]
 			elif g.panel=="menu": current=g.MENU_ACTIONS[clampi(g.menu_index,0,g.MENU_ACTIONS.size()-1)]
-			elif g.panel=="catalog": current="kind:"+str(g.kind)
+			elif g.panel=="catalog": current=g.construction_catalog.selected_action()
 			elif g.panel=="cities": current="city_select:"+str(g.city_list_index)
 			elif g.panel=="network": current="play:tab:"+str(g.gameplay_ui.tab)
 			elif g.panel=="scenarios" and not g.gameplay_ui.pending_scenario.is_empty(): current="play:cancel_scenario"
@@ -93,7 +92,7 @@ func mirror() -> void:
 		elif current.begins_with("title:"): g.title_index=["new","load","quit"].find(current.get_slice(":",1))
 		else: g.title_index=-1
 	elif g.panel=="menu": g.menu_index=g.MENU_ACTIONS.find(current)
-	elif g.panel=="catalog" and current.begins_with("kind:"): g.kind=int(current.get_slice(":",1))
+	elif g.panel=="catalog" and current.begins_with("catalog:item:"): g.construction_catalog.preview(current.trim_prefix("catalog:item:"))
 	elif g.panel=="cities" and current.begins_with("city_"): g.city_list_index=int(current.get_slice(":",1))
 	elif g.panel=="signal" and current.begins_with("signal:"): g.signal_index=["ns+","ew+","toggle"].find(current.get_slice(":",1))
 	elif g.panel=="infrastructure" and current.begins_with("mode:"): g.infrastructure_index=["road","roundabout","signal"].find(current.get_slice(":",1))
@@ -109,7 +108,7 @@ func navigate(direction: Vector2i) -> void:
 	sync()
 	if items.is_empty(): return
 	if g.panel=="signal" and direction.x!=0 and current.begins_with("signal:"):
-		if current=="signal:toggle": g.incidents.signals[g.cursor].enabled=direction.x>0
+		if current=="signal:toggle": g.incidents.signals[g.cursor].enabled=direction.x>0;g.graph_dirty=true
 		else: g.adjust_signal(direction.x)
 		return
 	var from: Dictionary = {}
@@ -136,6 +135,7 @@ func activate() -> void:
 	if current.is_empty(): return
 	var chosen=current
 	if g.at_title: g.title_action(chosen)
+	elif g.panel=="catalog" and chosen.begins_with("catalog:item:"): g.construction_catalog.confirm(chosen.trim_prefix("catalog:item:"))
 	elif chosen.begins_with("city_select:"): g.travel_city(int(chosen.get_slice(":",1)))
 	elif g.panel=="infrastructure" and chosen.begins_with("mode:"):
 		g.ui_action(chosen);g.select_tool(0)
