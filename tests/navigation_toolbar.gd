@@ -10,17 +10,19 @@ func run() -> void:
 	root.add_child(game)
 	game.set_process(false)
 	assert(game.TOOLS.size()==6)
-	assert(game.MENU_ACTIONS==["cities","map","stats","accounts","objectives","network","scenarios"])
-	for i in 5:
+	assert(game.MENU_ACTIONS==["cities","map","stats","accounts","objectives","network","scenarios","cheats"])
+	for i in range(1,5):
 		press(game,JOY_BUTTON_RIGHT_SHOULDER)
-		assert(game.tool==i+1)
-	assert(game.panel=="menu")
+		assert(game.tool==i and game.panel=="")
 	press(game,JOY_BUTTON_RIGHT_SHOULDER)
 	assert(game.tool==0 and game.panel=="")
 	press(game,JOY_BUTTON_LEFT_SHOULDER)
+	assert(game.tool==4 and game.panel=="")
+	press(game,JOY_BUTTON_START)
 	assert(game.panel=="menu")
 	press(game,JOY_BUTTON_B)
-	assert(game.tool==0 and game.panel=="")
+	assert(game.tool==4 and game.panel=="")
+	game.select_tool(0)
 	var old_zoom: float = game.zoom_target
 	var old_kind: int = game.kind
 	var trigger = InputEventJoypadMotion.new()

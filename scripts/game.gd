@@ -75,6 +75,7 @@ var tool = 0
 var horizontal = true
 var anchor = NO_CELL
 var speed_index = 1
+var pause_speed_index = 1
 var money = WorldSettings.STARTING_MONEY
 var earned = 0.0
 var trips = 0
@@ -111,8 +112,8 @@ var reset_armed = false
 var menu_index = 0
 var focus_city_index = 0
 var analog_menu_down = false
-const MENU_LABELS = ["Ciudades", "Mapa", "Estadísticas", "Contabilidad", "Objetivos", "Red y servicios", "Escenarios"]
-const MENU_ACTIONS = ["cities", "map", "stats", "accounts", "objectives", "network", "scenarios"]
+const MENU_LABELS = ["Ciudades", "Mapa", "Estadísticas", "Contabilidad", "Objetivos", "Red y servicios", "Escenarios", "Trucos"]
+const MENU_ACTIONS = ["cities", "map", "stats", "accounts", "objectives", "network", "scenarios", "cheats"]
 
 func _ready() -> void:
 	WorldSettings.validate()
@@ -660,7 +661,7 @@ func cash(value: float) -> String:
 func save_game(message: bool = true) -> void:
 	var file = FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null: tell("No se pudo guardar la partida."); return
-	file.store_var({"version":2, "roads":roads, "road_nodes":road_nodes, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
+	file.store_var({"version":2, "roads":roads, "road_nodes":road_nodes, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"pause_speed_index":pause_speed_index,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
 	if message: tell("Partida guardada.")
 
 func load_game() -> bool:
@@ -716,6 +717,7 @@ func load_game() -> bool:
 	if not construction_mode in ["road","roundabout","signal"]: construction_mode = "road"
 	navigator.seed_value = -1
 	speed_index = data.get("speed_index", 1)
+	pause_speed_index = clampi(data.get("pause_speed_index",maxi(1,speed_index)),1,SPEEDS.size()-1)
 	traffic.restore(data.get("traffic", {}))
 	services.restore(data.get("services",{}))
 	gameplay.restore(data.get("gameplay",{}))
@@ -771,6 +773,7 @@ func start_new_session() -> void:
 	title_message = ""
 	save_clock = 0
 	speed_index = 1
+	pause_speed_index = 1
 	kind = 0
 	horizontal = true
 	tile = 32.0
@@ -892,18 +895,22 @@ func _unhandled_input(event: InputEvent) -> void:
 			if pressed and not was_down and panel in ["","map"]: zoom_control(1.18 if event.axis == JOY_AXIS_TRIGGER_RIGHT else 1.0/1.18)
 			if event.axis == JOY_AXIS_TRIGGER_LEFT: trigger_left_down = pressed
 			else: trigger_right_down = pressed
-		elif panel != "" and panel != "map" and absf(event.axis_value)>0.6 and ui_move_clock<=0:
+		elif panel != "" and panel != "map" and event.axis in [JOY_AXIS_LEFT_X,JOY_AXIS_LEFT_Y] and absf(event.axis_value)>0.6 and ui_move_clock<=0:
 			if event.axis == JOY_AXIS_LEFT_X: panel_move(int(sign(event.axis_value)),0)
 			elif event.axis == JOY_AXIS_LEFT_Y: panel_move(0,int(sign(event.axis_value)))
 			ui_move_clock = 0.18
 	if event is InputEventJoypadButton and event.pressed:
 		last_pad = true
 		hover_cell = NO_CELL
-		if event.button_index == JOY_BUTTON_LEFT_SHOULDER: select_tool(posmod(tool-1,TOOLS.size())); return
-		if event.button_index == JOY_BUTTON_RIGHT_SHOULDER: select_tool((tool+1)%TOOLS.size()); return
-		if event.button_index == JOY_BUTTON_START: cycle_speed(); return
-		if event.button_index == JOY_BUTTON_B or event.button_index == JOY_BUTTON_BACK: cancel_or_back(); return
-		if panel=="menu" and event.button_index==JOY_BUTTON_LEFT_STICK: cheats.open(); return
+		if event.button_index==JOY_BUTTON_START: toggle_menu(); return
+		if event.button_index==JOY_BUTTON_BACK: toggle_map(); return
+		if event.button_index==JOY_BUTTON_B: cancel_or_back(); return
+		if event.button_index==JOY_BUTTON_LEFT_STICK: toggle_pause(); return
+		if event.button_index in [JOY_BUTTON_LEFT_SHOULDER,JOY_BUTTON_RIGHT_SHOULDER]:
+			var direction=-1 if event.button_index==JOY_BUTTON_LEFT_SHOULDER else 1
+			if panel=="": cycle_world_tool(direction)
+			else: panel_bumper(direction)
+			return
 		if panel != "":
 			match event.button_index:
 				JOY_BUTTON_A: panel_accept()
@@ -916,19 +923,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		match event.button_index:
 			JOY_BUTTON_A: apply_action()
-			JOY_BUTTON_Y: if TOOLS[tool].id == "build_road": open_road_selector()
+			JOY_BUTTON_Y: open_road_selector()
 			JOY_BUTTON_X:
 				if TOOLS[tool].id == "build_road": horizontal = not horizontal
 				elif TOOLS[tool].id == "repair_route": upgrade_current()
-			JOY_BUTTON_LEFT_STICK: zoom_control(1.5 if zoom_target<64 else 0.25)
 			JOY_BUTTON_RIGHT_STICK: focus_next_city()
 	if event is InputEventKey and event.pressed and not event.echo:
 		last_pad = false
 		hover_cell = NO_CELL
-		if event.physical_keycode == KEY_ESCAPE: cancel_or_back(); return
+		if event.physical_keycode in [KEY_ESCAPE,KEY_B]: cancel_or_back(); return
+		if event.physical_keycode == KEY_F10: toggle_menu(); return
 		if event.physical_keycode == KEY_F5: save_game(); return
 		if event.physical_keycode == KEY_F9: load_game(); close_panels(); return
-		if event.physical_keycode == KEY_SPACE: speed_index = 1 if speed_index == 0 else 0; return
+		if event.physical_keycode == KEY_SPACE: toggle_pause(); return
 		if event.physical_keycode == KEY_F: cycle_speed(); return
 		if event.keycode in [KEY_PLUS,KEY_KP_ADD] or event.physical_keycode in [KEY_EQUAL,KEY_PAGEUP]:
 			if panel == "cities": move_city_list(-6)
@@ -939,8 +946,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif panel in ["","map"]: zoom_control(1.0/1.25)
 			return
 		if event.physical_keycode == KEY_H and panel == "menu": open_panel("help"); return
-		if event.physical_keycode == KEY_Q: select_tool(posmod(tool-1,TOOLS.size())); return
-		if event.physical_keycode == KEY_TAB: select_tool((tool+1)%TOOLS.size()); return
+		if event.physical_keycode == KEY_Q:
+			if panel=="": cycle_world_tool(-1)
+			return
+		if event.physical_keycode == KEY_TAB:
+			if panel=="": cycle_world_tool(1)
+			else: panel_move(1,0)
+			return
 		if panel != "":
 			match event.physical_keycode:
 				KEY_ENTER,KEY_E: panel_accept()
@@ -953,8 +965,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		match event.physical_keycode:
 			KEY_ENTER,KEY_E: apply_action()
-			KEY_Q: select_tool(posmod(tool-1,TOOLS.size()))
-			KEY_TAB: select_tool((tool+1)%TOOLS.size())
+			KEY_Q: cycle_world_tool(-1)
+			KEY_TAB: cycle_world_tool(1)
 			KEY_R,KEY_X: if TOOLS[tool].id == "build_road": horizontal = not horizontal
 			KEY_V,KEY_Y: open_road_selector()
 			KEY_H: open_panel("help")
@@ -973,6 +985,31 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_P: select_tool(0); construction_mode = "road"
 			KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6: select_tool(event.physical_keycode-KEY_1)
 
+func cycle_world_tool(direction: int) -> void:
+	# Menú es una acción explícita, nunca un paso del ciclo de herramientas.
+	select_tool(posmod(clampi(tool,0,TOOLS.size()-2)+direction,TOOLS.size()-1))
+
+func toggle_menu() -> void:
+	if panel=="menu": close_panels()
+	else: open_menu()
+
+func toggle_map() -> void:
+	if panel=="map": back_panel()
+	else: open_panel("map")
+
+func toggle_pause() -> void:
+	if speed_index==0: speed_index=clampi(pause_speed_index,1,SPEEDS.size()-1)
+	else: pause_speed_index=speed_index;speed_index=0
+
+func panel_bumper(direction: int) -> void:
+	match panel:
+		"cities": move_city_list(direction*6)
+		"catalog": panel_move(direction,0)
+		"accounts": account_filter=posmod(account_filter+direction,3);account_scroll=0
+		"network": gameplay_ui.tab=posmod(gameplay_ui.tab+direction,3);gameplay_ui.focus_index=0
+		"menu","objectives","scenarios": panel_move(direction,0)
+		"signal","infrastructure": special_move(direction)
+
 func cycle_speed() -> void:
 	speed_index = (speed_index + 1) % SPEEDS.size()
 
@@ -980,6 +1017,7 @@ func toggle_anchor() -> void:
 	anchor = cursor if anchor == NO_CELL else NO_CELL
 
 func ui_action(action: String) -> void:
+	if action.begins_with("toolbar:"): visuals.toolbar.action(action); return
 	if action.begins_with("event:"): event_notices.action(action); return
 	if action.begins_with("play:"): gameplay_ui.action(action); return
 	if action.begins_with("tool:"): select_tool(int(action.get_slice(":",1)))
@@ -1077,7 +1115,7 @@ func close_panels() -> void:
 func cancel_or_back() -> void:
 	if panel != "": back_panel()
 	elif anchor != NO_CELL: anchor = NO_CELL
-	else: open_menu()
+	elif construction_mode!="road": construction_mode="road"
 
 func open_road_selector() -> void:
 	if TOOLS[tool].id != "build_road": select_tool(0)
@@ -1104,7 +1142,7 @@ func panel_move(x: int, y: int) -> void:
 func panel_accept() -> void:
 	if panel in ["objectives","network","scenarios"]: gameplay_ui.accept(); return
 	match panel:
-		"menu": open_panel(MENU_ACTIONS[menu_index])
+		"menu": ui_action(MENU_ACTIONS[menu_index])
 		"catalog": ui_action("kind:"+str(kind))
 		"cities": travel_city(city_list_index)
 		"map": travel_to(navigator.target)

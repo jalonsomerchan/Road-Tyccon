@@ -43,7 +43,9 @@ func run() -> void:
 	pad.button_index = JOY_BUTTON_LEFT_STICK
 	initial = game.zoom_target
 	game._unhandled_input(pad)
-	assert(game.zoom_target != initial, "Controller zoom")
+	assert(game.zoom_target == initial and game.speed_index==0, "L3 pauses without changing zoom or opening menus")
+	game._unhandled_input(pad)
+	assert(game.speed_index==1 and game.panel=="", "L3 resumes the simulation")
 	game.set_zoom(500)
 	assert(game.zoom_target == 96)
 	game.set_zoom(1)

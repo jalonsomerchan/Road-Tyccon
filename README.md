@@ -122,7 +122,7 @@ Los accesos llenos retienen la demanda dentro de la ciudad. El límite de 350 ve
 
 ## Barra, menú y controles
 
-La barra inferior contiene seis iconos, en este orden: **Construir carretera**, **Cerrar / abrir vía**, **Arreglar vía**, **Destruir vía**, **Talar árboles** y **Menú**. El icono de construcción muestra la carretera elegida. Las herramientas tienen identificadores estables para añadir otros tipos de vía en el futuro.
+La barra inferior agrupa **Construir**, **Cerrar / abrir**, **Reparar**, **Destruir** y **Talar** en el mismo orden que los controles 1–5 y LB/RB. Cada acción tiene un icono vectorial propio y una etiqueta debajo, con la selección destacada y una ayuda contextual al pasar el ratón. El selector central muestra el tipo de vía, su aspecto, los carriles y el precio por casilla. A su derecha hay accesos a **Rotonda**, **Semáforo**, **Mejorar**, **Deshacer** y **Menú**; mejorar y deshacer indican cuándo están disponibles. El botón de cierre cambia a **Abrir** al seleccionar una carretera cerrada. Los iconos de mapa, objetivos, servicios, pausa y zoom comparten el mismo estilo. El pie adapta sus indicaciones a teclado o mando. Iconos editables: `assets/ui/icons/`; presentación: `scripts/toolbar.gd`.
 
 La construcción normal siempre requiere **dos extremos distintos**: A / Enter fija el inicio, mueve el cursor y vuelve a confirmar para construir el tramo. B / Esc cancela el inicio. X / R cambia el orden de los ejes del trazado. Puedes conservar el inicio mientras consultas el mapa o te desplazas a otra ciudad.
 
@@ -141,28 +141,37 @@ El menú tiene cuatro pantallas:
 | Desplazamiento rápido | Mantener Mayús | Mantener la dirección del stick |
 | Acción / fijar inicio / confirmar tramo | Enter / E / clic | A |
 | Orden de los ejes del tramo | R / X | X |
-| Herramienta anterior / siguiente | Q / Tab; 1–6 selección directa | LB / RB (L1 / R1) |
+| Herramienta anterior / siguiente | Q / Tab; 1–5 herramientas, 6 menú | LB / RB (L1 / R1); excluye Menú |
 | Selector del tipo de carretera | Y / V | Y con Construir seleccionado |
 | Elegir carretera en catálogo | Flechas, Enter | Cruceta / stick, A |
 | Modo carretera / rotonda / semáforo | Botones del catálogo / X | X dentro del catálogo |
-| Zoom | +/−, rueda, RePág / AvPág | LT / RT (L2 / R2); L3 alterna zoom |
+| Zoom | +/−, rueda, RePág / AvPág | LT / RT (L2 / R2) |
 | Siguiente acceso de ciudad | G | R3 |
-| Pausa | Espacio | Start, recorriendo las velocidades |
-| Velocidad pausa / 1× / 2× / 4× / 8× | F | Start |
-| Menú / cancelar / volver | Esc / clic derecho | B / View |
+| Pausa / reanudar | Espacio | L3; recupera la velocidad anterior |
+| Velocidad pausa / 1× / 2× / 4× / 8× | F; botón superior | Botón de velocidad en pantalla |
+| Menú principal | 6 / F10; botón Menú | ☰ (Menu / Start) |
+| Cancelar / volver / cerrar | B / Esc / clic derecho | B |
 | Reparar / mejorar al tipo elegido | Enter / U con vía cerrada | A / X con Arreglar seleccionado |
 | Rotonda / semáforo / carretera normal | O / T / P | Y → catálogo, X cambia modo, A confirma |
 | Inspección de selección | I; bocadillo automático | Bocadillo automático |
 | Localizar nieve / incendio reciente | J | — |
-| Mapa interactivo | M | Menú → Mapa |
+| Mapa interactivo | M | View |
 | Mover mapa / ir al destino | WASD / flechas, Enter; clic selecciona, doble clic va; arrastre derecho desplaza | Stick / cruceta, A |
 | Encuadrar mapa conocido / entero | X / Y dentro del mapa | X / Y dentro del mapa |
 | Guardar / cargar | F5 / F9; X / Y en menú principal | X / Y en menú principal |
 | Ayuda | H; botón del menú | Botón del menú con ratón / pantalla táctil |
-| Trucos | F8; botón del menú | L3 dentro del menú; cruceta / stick elige y A ejecuta |
+| Trucos | F8; opción del menú | Menú → Trucos; cruceta / stick y A |
 | Nueva región | N y repetir para confirmar | — |
 
 En la lista de ciudades, ↑ / ↓ elige, A / Enter va y X / Y cambia página. En Contabilidad, ↑ / ↓ desplaza y X / Y cambia el filtro. El menú no detiene el tiempo; usa pausa cuando lo necesites.
+
+### Controles de Steam Deck
+
+**☰ (Menu/Start)** abre el menú principal y vuelve a cerrarlo. **View** abre/cierra el mapa. **B** vuelve a la pantalla anterior, cierra un cuadro, descarta un aviso o cancela el trazado o modo de construcción; en el mapa de juego, si no hay nada que cancelar, no hace nada. B nunca abre el menú desde el juego.
+
+**L1/R1** recorren únicamente las cinco herramientas de construcción, cierre, reparación, demolición y tala. Dentro de un panel cambian de página, columna, filtro o pestaña, manteniéndolo abierto. **L3** pausa/reanuda y recupera la velocidad que había antes de pausar. **L2/R2** controlan el zoom; **R3** va a la siguiente ciudad. **A** confirma y **Y** abre el catálogo desde cualquier herramienta. **X** cambia el trazado; en el catálogo cambia carretera/rotonda/semáforo y, con Reparar, permite mejorar. La consola de trucos es una opción seleccionable del menú, con A para abrirla y B para cerrarla.
+
+En teclado, **6/F10** abre el menú; **B/Esc/clic derecho** solo cierran, vuelven o cancelan. **Q/Tab** recorren las cinco herramientas sin abrir el menú; Tab dentro de un panel recorre su selección.
 
 ## Trucos
 

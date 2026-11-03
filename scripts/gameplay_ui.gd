@@ -263,9 +263,9 @@ func draw_hud(visuals) -> void:
 	var metric = gp.metrics()
 	visuals.text(Vector2(260,24),"%s · Nivel %d · %d reputación"%[{"free":"Libre","progression":"Progresión","scenario":"Reto"}.get(gp.mode,"Libre"),gp.tier,gp.reputation],13,visuals.MUTED)
 	visuals.text(Vector2(260,46),"Demora %.0f s · Conservación %s/min"%[metric.delay,g.cash(gp.upkeep_per_minute())],14,visuals.PAPER)
-	visuals.button(Rect2(680,12,178,36),"Objetivos · K","objectives",g.panel=="objectives")
+	visuals.icon_button(Rect2(680,12,178,36),"Objetivos · K","objectives","goals",g.panel=="objectives")
 	if g.panel!="": return
-	visuals.button(Rect2(20,116,350,30),"Red y servicios · C inspeccionar","network")
+	visuals.icon_button(Rect2(20,116,350,30),"Red y servicios · C inspeccionar","network","network")
 	if not gp.scenario_id.is_empty():
 		visuals.text(Vector2(386,138),"%s · %.0f s"%[gp.scenario().name,maxf(0,gp.scenario().duration-g.elapsed)],15,visuals.GREEN)
 	if gp.overlay!="none":

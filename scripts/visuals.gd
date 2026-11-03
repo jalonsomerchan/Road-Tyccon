@@ -2,6 +2,7 @@ extends RefCounted
 ## Presentación: los sprites, la interfaz y los efectos no alteran la simulación.
 var g
 var canvas
+var toolbar
 var terrain_cache
 var scenery_atlas: Texture2D
 var scenery_atlas_size = Vector2.ONE
@@ -64,6 +65,8 @@ func _init(game) -> void:
 		for i in 4:
 			var path = "res://assets/sprites/environment/%s/frame-%d.png" % [name, i + 1]
 			environment[name].append(load(path) if ResourceLoader.exists(path) else null)
+
+	toolbar=preload("res://scripts/toolbar.gd").new(g,self)
 
 func batch_scenery_atlas() -> void:
 	# Una textura compartida permite a Godot agrupar miles de sprites sin cambiar de textura.
@@ -469,47 +472,16 @@ func draw_hud() -> void:
 	text(Vector2(68, 46), g.cash(g.display_money), 22, Color("ff9383") if g.display_money > g.money + 1 else GREEN.lerp(Color.WHITE, g.income_pulse * 0.65))
 	# Separadores y botones compactos, siempre conectados a sus acciones actuales.
 	rect(Rect2(874, 13, 1, 34), Color("47605a"))
-	button(Rect2(891, 12, 96, 36), "Ⅱ Pausa" if g.speed_index == 0 else "▶ " + str(g.SPEEDS[g.speed_index]) + "×", "speed", g.speed_index == 0)
-	button(Rect2(1000, 12, 132, 36), "Región · M", "map")
-	var menu_area = Rect2(1144, 12, 116, 36)
-	button(menu_area, "", "menu", g.panel == "menu")
-	draw_tool_icon("menu", menu_area.position + Vector2(20, 18), INK if g.panel == "menu" else PAPER)
-	text(menu_area.position + Vector2(36, 24), "Menú", 15, INK if g.panel == "menu" else PAPER)
-	# Dock centrado: cinco herramientas frecuentes y el selector de carretera elegido.
-	var dock = Rect2(140, 690, 1000, 90)
-	card(dock)
-	var visible_tools = [0, 2, 3, 4, 1]
-	var labels = ["Construir", "Reparar", "Destruir", "Talar", "Cerrar"]
-	var tool_width = 116.0
-	for i in visible_tools.size():
-		var index: int = visible_tools[i]
-		var area = Rect2(152 + i * 124, 700, tool_width, 48)
-		var active = g.tool == index
-		button(area, "", "tool:" + str(index), active)
-		draw_tool_icon(g.TOOLS[index].icon, area.position + Vector2(23, 24), INK if active else PAPER)
-		text(area.position + Vector2(42, 29), labels[i], 14, INK if active else PAPER)
-	rect(Rect2(782, 700, 1, 48), Color("47605a"))
-	var selector = Rect2(798, 700, 328, 58)
-	button(selector, "", "catalog", g.panel == "catalog")
-	if g.construction_mode == "roundabout":
-		var roundabout = road_conditions[g.kind].roundabout
-		if roundabout != null: canvas.draw_texture_rect(roundabout, Rect2(809, 708, 42, 42), false)
-	else:
-		sprite("roads", g.kind, Rect2(807, 710, 38, 38))
-	text(Vector2(855, 723), g.Catalog.ROADS[g.kind].name, 15, INK if g.panel == "catalog" else PAPER)
-	text(Vector2(855, 744), str(g.Catalog.ROADS[g.kind].lanes) + (" carril · " if g.Catalog.ROADS[g.kind].lanes == 1 else " carriles · ") + g.cash(g.Catalog.ROADS[g.kind].cost), 12, INK if g.panel == "catalog" else MUTED)
-	canvas.draw_polyline(PackedVector2Array([Vector2(1109, 721), Vector2(1114, 726), Vector2(1119, 721)]), INK if g.panel == "catalog" else GREEN, 2)
-	var hint = "Enter inicio · Y catálogo · R giro" if g.anchor==g.NO_CELL else "Enter construir · Esc cancelar · R giro"
-	if g.last_pad: hint = "A inicio · Y catálogo · X giro" if g.anchor==g.NO_CELL else "A construir · B cancelar · X giro"
-	if g.TOOLS[g.tool].id == "repair_route": hint = "Enter reparar · U mejorar al tipo elegido" if not g.last_pad else "A reparar · X mejorar al tipo elegido"
-	if g.TOOLS[g.tool].id == "demolish_route": hint = "Enter destruir · 25 % del precio · 5 s"
-	if g.TOOLS[g.tool].id == "fell_trees": hint = "Enter talar · 20 € · 3 s"
-	if g.TOOLS[g.tool].id == "close_route": hint = "Enter cerrar o abrir la vía seleccionada"
-	text(Vector2(154, 772), hint, 12, MUTED)
+	icon_button(Rect2(891,12,96,36),"Pausa" if g.speed_index==0 else str(g.SPEEDS[g.speed_index])+"×","speed","play" if g.speed_index==0 else "pause",g.speed_index==0)
+	icon_button(Rect2(1000,12,132,36),"Mapa · M","map","map")
+	icon_button(Rect2(1144,12,116,36),"Menú","menu","menu",g.panel=="menu")
+	toolbar.draw()
 	card(Rect2(1216,324,44,140))
-	button(Rect2(1218,326,40,40),"+","zoom_in")
+	button(Rect2(1218,326,40,40),"","zoom_in")
+	draw_tool_icon("zoom_in",Vector2(1238,346),PAPER,22)
 	text(Vector2(1220,395),str(int(g.zoom_target/32*100))+"%",12,MUTED)
-	button(Rect2(1218,416,40,40),"−","zoom_out")
+	button(Rect2(1218,416,40,40),"","zoom_out")
+	draw_tool_icon("zoom_out",Vector2(1238,436),PAPER,22)
 	if g.notice_time > 0:
 		var width = minf(940, g.font.get_string_size(g.notice, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 32)
 		card(Rect2(20, 72, width, 34), Color("243e34"))
@@ -534,33 +506,14 @@ func draw_minimap() -> void:
 	canvas.draw_rect(Rect2(current - Vector2(640, 400) / g.tile / span * 166, Vector2(1280, 800) / g.tile / span * 166), GREEN, false, 1)
 	text(Vector2(32, 515), "REGIÓN CONOCIDA · M", 10, MUTED)
 
-func draw_tool_icon(icon: String, at: Vector2, color: Color) -> void:
-	match icon:
-		"road":
-			if g.construction_mode == "roundabout":
-				canvas.draw_texture_rect(road_conditions[g.kind].roundabout,Rect2(at-Vector2(22,22),Vector2(44,44)),false)
-			else: sprite("roads",g.kind,Rect2(at-Vector2(22,22),Vector2(44,44)))
-			if g.construction_mode == "signal":
-				rect(Rect2(at+Vector2(8,-18),Vector2(9,26)),INK)
-				canvas.draw_circle(at+Vector2(12,-11),3,Color("e7896f"))
-				canvas.draw_circle(at+Vector2(12,0),3,GREEN)
-		"close":
-			rect(Rect2(at-Vector2(24,7),Vector2(48,12)),color)
-			for x in [-17,0,17]: canvas.draw_line(at+Vector2(x-4,-6),at+Vector2(x+4,4),INK if color==PAPER else Color("a6664c"),4)
-			for x in [-18,18]: rect(Rect2(at+Vector2(x-2,5),Vector2(4,15)),color)
-		"repair":
-			canvas.draw_line(at+Vector2(-16,17),at+Vector2(11,-10),color,8)
-			canvas.draw_arc(at+Vector2(12,-11),10,0.2,4.5,12,color,6)
-			canvas.draw_circle(at+Vector2(-16,17),3,INK if color==PAPER else GREEN)
-		"demolish":
-			canvas.draw_line(at+Vector2(-13,18),at+Vector2(9,-12),color,6)
-			canvas.draw_line(at+Vector2(-8,-20),at+Vector2(25,0),color,12)
-		"tree":
-			rect(Rect2(at+Vector2(-3,2),Vector2(6,19)),color)
-			canvas.draw_colored_polygon(PackedVector2Array([at+Vector2(0,-22),at+Vector2(-21,8),at+Vector2(21,8)]),color)
-			canvas.draw_line(at+Vector2(8,17),at+Vector2(25,0),Color("b5795c"),4)
-		"menu":
-			for y in [-12,0,12]: rect(Rect2(at+Vector2(-18,y-2),Vector2(36,4)),color)
+func draw_tool_icon(icon: String, at: Vector2, color: Color, size: float = 30) -> void:
+	toolbar.icon(icon,at,color,size)
+
+func icon_button(area: Rect2, label: String, action: String, icon: String, active: bool = false) -> void:
+	button(area,"",action,active)
+	var color=INK if active else PAPER
+	draw_tool_icon(icon,area.position+Vector2(21,area.size.y/2),color,20)
+	text(area.position+Vector2(39,area.size.y/2+6),label,15,color)
 
 func draw_jobs() -> void:
 	for p in g.services.service_jobs:
@@ -588,7 +541,7 @@ func draw_panel() -> void:
 	button(Rect2(1015,105,110,36),"Volver B","close")
 	match g.panel:
 		"menu":
-			var descriptions = ["Conexiones, habitantes y viajes", "Explora y desplázate por la región", "Evolución de tu red y del tráfico", "Ingresos, gastos y movimientos", "Contratos, reputación y desbloqueos", "Tráfico, mantenimiento y emergencias", "Retos de 15–30 min y récords locales"]
+			var descriptions = ["Conexiones, habitantes y viajes", "Explora y desplázate por la región", "Evolución de tu red y del tráfico", "Ingresos, gastos y movimientos", "Contratos, reputación y desbloqueos", "Tráfico, mantenimiento y emergencias", "Retos de 15–30 min y récords locales", "Consola de pruebas y ajustes rápidos"]
 			for i in g.MENU_LABELS.size():
 				var area = Rect2(166+(i%2)*486,164+int(i/2)*104,462,92)
 				button(area,"",g.MENU_ACTIONS[i],g.menu_index==i)
@@ -598,8 +551,8 @@ func draw_panel() -> void:
 			button(Rect2(166,592,180,40),"Guardar · X","save")
 			button(Rect2(360,592,180,40),"Cargar · Y","load")
 			button(Rect2(554,592,180,40),"Ayuda · H","help")
-			button(Rect2(748,592,180,40),"Trucos · L3 / F8","cheats")
-			text(Vector2(166,675),"Cruceta / stick elegir · A / Enter abrir · B / Esc volver",14,MUTED)
+			button(Rect2(748,592,180,40),"Trucos · F8","cheats")
+			text(Vector2(166,675),"Cruceta / stick elegir · A abrir · B volver · ☰ cerrar menú · L3 pausa",14,MUTED)
 		"objectives","network","scenarios": g.gameplay_ui.draw_panel(self)
 		"catalog": draw_catalog()
 		"cities": draw_city_list()
@@ -771,9 +724,9 @@ func draw_help() -> void:
 		"Cierra antes de reparar o mejorar. Después de las obras, vuelve a abrir.",
 		"Une las ciudades por sus accesos señalados. No se conectan por los otros bordes.",
 		"Los coches viajan y pagan al llegar: verás el ingreso junto a la ciudad.",
-		"Zoom: LT / RT, rueda o + / −. LB / RB cambia de herramienta.",
-		"Mayús mueve rápido · Espacio pausa · F / Start velocidad · G / R3 siguiente acceso.",
-		"I inspección · M mapa · Esc / View menú · F5 guardar · F9 cargar.",
+		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las cinco herramientas.",
+		"Mayús mover rápido · Espacio / L3 pausa · F velocidad · G / R3 siguiente ciudad.",
+		"I inspección · M / View mapa · 6 / F10 / ☰ menú · B / Esc cancelar.",
 		"K objetivos · C inspeccionar coche · L capas · Ctrl+Z deshacer · Menú: Red y servicios."
 	]
 	for i in lines.size(): text(Vector2(166, 191 + i * 42), lines[i], 18, PAPER)

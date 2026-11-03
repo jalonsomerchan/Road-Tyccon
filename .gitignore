@@ -24,3 +24,5 @@ tests/gameplay_scores.bin
 tests/test_scores.bin
 
 tests/event_notices_save.bin
+
+tests/steam_deck_save.bin

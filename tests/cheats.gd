@@ -47,7 +47,9 @@ func run() -> void:
 	assert(console.execute("help").ok)
 	game.open_menu()
 	var button=InputEventJoypadButton.new()
-	button.pressed=true;button.button_index=JOY_BUTTON_LEFT_STICK
+	button.pressed=true;button.button_index=JOY_BUTTON_A
+	while not game.event_notices.pending.is_empty(): game.event_notices.respond(game.event_notices.pending[0].id,false)
+	game.menu_index=game.MENU_ACTIONS.find("cheats")
 	game._unhandled_input(button)
 	assert(console.is_open())
 	console.selection=0
