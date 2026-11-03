@@ -1,0 +1,184 @@
+{
+  "target": "asset",
+  "mode": "sheet",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/jorgealonso/Proyectos/new-road-tyccon/assets/source/roads-v3/steel_bridge-raw.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 64,
+  "fit_scale": 1.0,
+  "trim_border": 0,
+  "edge_clean_depth": 0,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "variant-1",
+    "variant-2",
+    "variant-3",
+    "variant-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        639,
+        615
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 114067,
+      "selected_component_bbox": [
+        211,
+        19,
+        429,
+        559
+      ],
+      "crop_bbox": [
+        211,
+        19,
+        429,
+        559
+      ],
+      "edge_touch": false,
+      "output_size": [
+        23,
+        59
+      ],
+      "paste_position": [
+        20,
+        2
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        639,
+        0,
+        1278,
+        615
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 154206,
+      "selected_component_bbox": [
+        104,
+        19,
+        588,
+        521
+      ],
+      "crop_bbox": [
+        104,
+        19,
+        588,
+        521
+      ],
+      "edge_touch": false,
+      "output_size": [
+        52,
+        54
+      ],
+      "paste_position": [
+        6,
+        5
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        615,
+        639,
+        1230
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 168837,
+      "selected_component_bbox": [
+        27,
+        0,
+        612,
+        392
+      ],
+      "crop_bbox": [
+        27,
+        0,
+        612,
+        392
+      ],
+      "edge_touch": true,
+      "output_size": [
+        64,
+        42
+      ],
+      "paste_position": [
+        0,
+        11
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        639,
+        615,
+        1278,
+        1230
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 202072,
+      "selected_component_bbox": [
+        27,
+        0,
+        612,
+        549
+      ],
+      "crop_bbox": [
+        27,
+        0,
+        612,
+        549
+      ],
+      "edge_touch": true,
+      "output_size": [
+        64,
+        60
+      ],
+      "paste_position": [
+        0,
+        2
+      ]
+    }
+  ],
+  "edge_touch_frames": [
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ]
+  ]
+}

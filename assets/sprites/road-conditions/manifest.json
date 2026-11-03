@@ -1,0 +1,43 @@
+{
+  "count": 216,
+  "slugs": [
+    "dirt",
+    "gravel",
+    "concrete",
+    "local",
+    "secondary",
+    "main",
+    "express",
+    "dual",
+    "motorway",
+    "premium",
+    "wood_bridge",
+    "stone_bridge",
+    "concrete_bridge",
+    "steel_bridge",
+    "cable_bridge",
+    "suspension_bridge",
+    "forest",
+    "farm",
+    "cobble",
+    "residential",
+    "avenue",
+    "county",
+    "ring",
+    "superhighway"
+  ],
+  "states": [
+    "burning",
+    "snowy",
+    "damaged",
+    "very_damaged",
+    "extreme_damage",
+    "closed",
+    "fading",
+    "roundabout",
+    "signal"
+  ],
+  "size": 64,
+  "roundabout_size": 192,
+  "generator": "built-in image_gen"
+}

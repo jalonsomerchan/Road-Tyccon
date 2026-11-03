@@ -1,0 +1,36 @@
+{
+  "size": 64,
+  "shapes": [
+    "straight",
+    "curve",
+    "tee",
+    "cross"
+  ],
+  "canonical_ports": [
+    "NS",
+    "NE",
+    "NEW",
+    "NESW"
+  ],
+  "kinds": {
+    "0": "dirt",
+    "1": "gravel",
+    "2": "concrete",
+    "3": "local",
+    "4": "secondary",
+    "5": "main",
+    "6": "express",
+    "7": "dual",
+    "8": "motorway",
+    "9": "premium",
+    "10": "wood_bridge",
+    "11": "stone_bridge",
+    "12": "concrete_bridge",
+    "13": "steel_bridge",
+    "14": "cable_bridge",
+    "15": "suspension_bridge"
+  },
+  "count": 64,
+  "generator": "built-in image_gen",
+  "registration": "fixed grid; magenta removal; affine port alignment; nearest neighbor scaling"
+}

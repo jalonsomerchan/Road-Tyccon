@@ -1,0 +1,242 @@
+[
+  {
+    "sprite": 1,
+    "source_bbox": [
+      39,
+      15,
+      288,
+      270
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 2,
+    "source_bbox": [
+      38,
+      15,
+      286,
+      270
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 3,
+    "source_bbox": [
+      33,
+      14,
+      281,
+      269
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 4,
+    "source_bbox": [
+      32,
+      14,
+      282,
+      269
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 5,
+    "source_bbox": [
+      26,
+      0,
+      301,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 6,
+    "source_bbox": [
+      27,
+      0,
+      298,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 7,
+    "source_bbox": [
+      26,
+      0,
+      289,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 8,
+    "source_bbox": [
+      21,
+      0,
+      293,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 9,
+    "source_bbox": [
+      26,
+      0,
+      301,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 10,
+    "source_bbox": [
+      26,
+      0,
+      298,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 11,
+    "source_bbox": [
+      25,
+      0,
+      289,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 12,
+    "source_bbox": [
+      20,
+      0,
+      294,
+      309
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 13,
+    "source_bbox": [
+      28,
+      0,
+      299,
+      273
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 14,
+    "source_bbox": [
+      27,
+      0,
+      297,
+      273
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 15,
+    "source_bbox": [
+      18,
+      0,
+      298,
+      273
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "sprite": 16,
+    "source_bbox": [
+      16,
+      0,
+      297,
+      273
+    ],
+    "output_bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  }
+]

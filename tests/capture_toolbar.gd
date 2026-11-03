@@ -1,0 +1,45 @@
+extends SceneTree
+var game
+func _initialize() -> void: call_deferred("run")
+func shot(name: String) -> void:
+	game.queue_redraw()
+	await process_frame
+	RenderingServer.force_draw(false)
+	root.get_texture().get_image().save_png("res://tests/"+name+".png")
+func run() -> void:
+	game = load("res://scenes/main.tscn").instantiate()
+	root.add_child(game)
+	game.set_process(false)
+	root.size = Vector2i(1280,800)
+	game.notice_time = 0
+	game.cursor += Vector2i(3,0)
+	game.anchor = game.cursor
+	game.cursor += Vector2i(7,3)
+	game.camera = Vector2(game.cursor)-Vector2(3,0)
+	game.last_pad = true
+	await shot("toolbar")
+	game.open_menu()
+	await shot("menu-toolbar")
+	game.ui_action("cities")
+	await shot("cities-toolbar")
+	game.back_panel()
+	game.ui_action("map")
+	for i in 12: game.navigator.update(0.2)
+	await shot("map-toolbar")
+	game.back_panel()
+	game.ui_action("stats")
+	await shot("stats-toolbar")
+	game.transact(-2400,"construction","Construir carretera · 30 casillas")
+	game.transact(-20,"logging","Tala de árboles")
+	game.transact(-100,"accidents","Accidente de tráfico")
+	game.transact(-50,"demolition","Demolición de carretera")
+	game.transact(-200,"repairs","Arreglar vía · 4 casillas")
+	game.transact(240,"trips","Viaje completado")
+	game.back_panel()
+	game.ui_action("accounts")
+	await shot("accounts-toolbar")
+	game.close_panels()
+	game.open_road_selector()
+	await shot("catalog-toolbar")
+	game.free()
+	quit()

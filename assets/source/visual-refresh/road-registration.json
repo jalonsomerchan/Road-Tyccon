@@ -1,0 +1,1154 @@
+[
+  {
+    "kind": "dirt",
+    "shape": "straight",
+    "source_port_center": [
+      125.75,
+      126.0
+    ],
+    "source_scale": [
+      0.31788079470198677,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "curve",
+    "source_port_center": [
+      93.5,
+      126.0
+    ],
+    "source_scale": [
+      0.3287671232876712,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      125.5
+    ],
+    "source_scale": [
+      0.34285714285714286,
+      0.32
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "cross",
+    "source_port_center": [
+      125.75,
+      126.0
+    ],
+    "source_scale": [
+      0.32653061224489793,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "straight",
+    "source_port_center": [
+      126.25,
+      126.0
+    ],
+    "source_scale": [
+      0.31788079470198677,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "curve",
+    "source_port_center": [
+      94.0,
+      126.0
+    ],
+    "source_scale": [
+      0.32432432432432434,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      125.75
+    ],
+    "source_scale": [
+      0.3287671232876712,
+      0.3137254901960784
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "cross",
+    "source_port_center": [
+      125.75,
+      126.25
+    ],
+    "source_scale": [
+      0.32653061224489793,
+      0.3096774193548387
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "straight",
+    "source_port_center": [
+      126.5,
+      126.0
+    ],
+    "source_scale": [
+      0.32432432432432434,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "curve",
+    "source_port_center": [
+      94.5,
+      127.0
+    ],
+    "source_scale": [
+      0.32,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      126.0
+    ],
+    "source_scale": [
+      0.3287671232876712,
+      0.3116883116883117
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      126.25
+    ],
+    "source_scale": [
+      0.3287671232876712,
+      0.3096774193548387
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "straight",
+    "source_port_center": [
+      126.75,
+      126.0
+    ],
+    "source_scale": [
+      0.276657060518732,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "curve",
+    "source_port_center": [
+      84.5,
+      124.5
+    ],
+    "source_scale": [
+      0.41025641025641024,
+      0.46601941747572817
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      124.75
+    ],
+    "source_scale": [
+      0.4948453608247423,
+      0.463768115942029
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "cross",
+    "source_port_center": [
+      125.25,
+      124.75
+    ],
+    "source_scale": [
+      0.5026178010471204,
+      0.463768115942029
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "straight",
+    "source_port_center": [
+      127.0,
+      126.0
+    ],
+    "source_scale": [
+      0.27586206896551724,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "curve",
+    "source_port_center": [
+      84.5,
+      124.0
+    ],
+    "source_scale": [
+      0.41025641025641024,
+      0.4528301886792453
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      123.5
+    ],
+    "source_scale": [
+      0.4948453608247423,
+      0.45714285714285713
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "cross",
+    "source_port_center": [
+      125.0,
+      123.5
+    ],
+    "source_scale": [
+      0.5,
+      0.45714285714285713
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "straight",
+    "source_port_center": [
+      126.75,
+      126.0
+    ],
+    "source_scale": [
+      0.276657060518732,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "curve",
+    "source_port_center": [
+      84.5,
+      123.5
+    ],
+    "source_scale": [
+      0.41025641025641024,
+      0.45714285714285713
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      124.0
+    ],
+    "source_scale": [
+      0.4948453608247423,
+      0.4528301886792453
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "cross",
+    "source_port_center": [
+      125.5,
+      123.75
+    ],
+    "source_scale": [
+      0.5052631578947369,
+      0.4549763033175355
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "straight",
+    "source_port_center": [
+      126.25,
+      118.0
+    ],
+    "source_scale": [
+      0.27507163323782235,
+      0.2711864406779661
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "curve",
+    "source_port_center": [
+      111.0,
+      121.0
+    ],
+    "source_scale": [
+      0.3333333333333333,
+      0.42857142857142855
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      120.5
+    ],
+    "source_scale": [
+      0.42105263157894735,
+      0.43636363636363634
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "cross",
+    "source_port_center": [
+      126.5,
+      120.5
+    ],
+    "source_scale": [
+      0.42857142857142855,
+      0.43243243243243246
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "straight",
+    "source_port_center": [
+      122.0,
+      118.0
+    ],
+    "source_scale": [
+      0.21238938053097345,
+      0.2711864406779661
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "curve",
+    "source_port_center": [
+      112.5,
+      127.0
+    ],
+    "source_scale": [
+      0.25668449197860965,
+      0.32432432432432434
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "tee",
+    "source_port_center": [
+      122.5,
+      114.5
+    ],
+    "source_scale": [
+      0.3902439024390244,
+      0.366412213740458
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "cross",
+    "source_port_center": [
+      127.0,
+      114.5
+    ],
+    "source_scale": [
+      0.3902439024390244,
+      0.3609022556390977
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "straight",
+    "source_port_center": [
+      120.0,
+      123.0
+    ],
+    "source_scale": [
+      0.21621621621621623,
+      0.2601626016260163
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "curve",
+    "source_port_center": [
+      124.0,
+      129.0
+    ],
+    "source_scale": [
+      0.24742268041237114,
+      0.2823529411764706
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "tee",
+    "source_port_center": [
+      129.5,
+      124.0
+    ],
+    "source_scale": [
+      0.294478527607362,
+      0.2981366459627329
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      127.25
+    ],
+    "source_scale": [
+      0.2981366459627329,
+      0.29721362229102166
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "straight",
+    "source_port_center": [
+      126.5,
+      132.5
+    ],
+    "source_scale": [
+      0.2191780821917808,
+      0.24150943396226415
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "curve",
+    "source_port_center": [
+      119.5,
+      139.5
+    ],
+    "source_scale": [
+      0.23414634146341465,
+      0.26519337016574585
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "tee",
+    "source_port_center": [
+      126.5,
+      136.5
+    ],
+    "source_scale": [
+      0.2513089005235602,
+      0.2742857142857143
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      133.0
+    ],
+    "source_scale": [
+      0.2681564245810056,
+      0.26373626373626374
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      126.5,
+      123.0
+    ],
+    "source_scale": [
+      0.26666666666666666,
+      0.2601626016260163
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      124.0,
+      123.5
+    ],
+    "source_scale": [
+      0.2857142857142857,
+      0.2891566265060241
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      123.75
+    ],
+    "source_scale": [
+      0.32432432432432434,
+      0.2909090909090909
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      123.5
+    ],
+    "source_scale": [
+      0.3037974683544304,
+      0.2891566265060241
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      125.5,
+      141.5
+    ],
+    "source_scale": [
+      0.19123505976095617,
+      0.22614840989399293
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      126.5,
+      142.0
+    ],
+    "source_scale": [
+      0.19123505976095617,
+      0.1702127659574468
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      125.5,
+      141.5
+    ],
+    "source_scale": [
+      0.19123505976095617,
+      0.1696113074204947
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      125.75,
+      141.0
+    ],
+    "source_scale": [
+      0.19161676646706588,
+      0.1702127659574468
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      126.75,
+      126.5
+    ],
+    "source_scale": [
+      0.3342036553524804,
+      0.25296442687747034
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      78.0,
+      127.5
+    ],
+    "source_scale": [
+      0.49230769230769234,
+      0.4129032258064516
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      125.75
+    ],
+    "source_scale": [
+      0.47761194029850745,
+      0.42524916943521596
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      125.5
+    ],
+    "source_scale": [
+      0.4740740740740741,
+      0.423841059602649
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      127.0,
+      126.5
+    ],
+    "source_scale": [
+      0.3287671232876712,
+      0.25296442687747034
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      79.0,
+      124.0
+    ],
+    "source_scale": [
+      0.463768115942029,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      124.0
+    ],
+    "source_scale": [
+      0.4383561643835616,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      125.75,
+      123.0
+    ],
+    "source_scale": [
+      0.4429065743944637,
+      0.3902439024390244
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      127.0,
+      125.5
+    ],
+    "source_scale": [
+      0.2926829268292683,
+      0.2549800796812749
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      84.5,
+      123.0
+    ],
+    "source_scale": [
+      0.39751552795031053,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      123.0
+    ],
+    "source_scale": [
+      0.34782608695652173,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      126.0,
+      123.0
+    ],
+    "source_scale": [
+      0.3615819209039548,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "straight",
+    "source_port_center": [
+      126.75,
+      126.0
+    ],
+    "source_scale": [
+      0.3127035830618892,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "curve",
+    "source_port_center": [
+      78.0,
+      121.0
+    ],
+    "source_scale": [
+      0.42105263157894735,
+      0.38095238095238093
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "tee",
+    "source_port_center": [
+      126.0,
+      122.0
+    ],
+    "source_scale": [
+      0.3764705882352941,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "cross",
+    "source_port_center": [
+      125.5,
+      122.0
+    ],
+    "source_scale": [
+      0.3742690058479532,
+      0.3855421686746988
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "straight",
+    "source_port_center": [
+      126.5,
+      125.5
+    ],
+    "source_scale": [
+      0.2891566265060241,
+      0.2549800796812749
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "curve",
+    "source_port_center": [
+      110.0,
+      116.0
+    ],
+    "source_scale": [
+      0.3333333333333333,
+      0.3333333333333333
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "tee",
+    "source_port_center": [
+      125.5,
+      115.75
+    ],
+    "source_scale": [
+      0.3037974683544304,
+      0.3310344827586207
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "cross",
+    "source_port_center": [
+      125.0,
+      116.5
+    ],
+    "source_scale": [
+      0.3157894736842105,
+      0.3287671232876712
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "straight",
+    "source_port_center": [
+      126.75,
+      126.0
+    ],
+    "source_scale": [
+      0.2981366459627329,
+      0.25396825396825395
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "curve",
+    "source_port_center": [
+      111.0,
+      116.0
+    ],
+    "source_scale": [
+      0.3,
+      0.3076923076923077
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "tee",
+    "source_port_center": [
+      125.5,
+      114.75
+    ],
+    "source_scale": [
+      0.3037974683544304,
+      0.31788079470198677
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "cross",
+    "source_port_center": [
+      125.75,
+      114.5
+    ],
+    "source_scale": [
+      0.3096774193548387,
+      0.32
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "straight",
+    "source_port_center": [
+      120.0,
+      123.5
+    ],
+    "source_scale": [
+      0.3333333333333333,
+      0.2591093117408907
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "curve",
+    "source_port_center": [
+      108.5,
+      122.0
+    ],
+    "source_scale": [
+      0.32,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "tee",
+    "source_port_center": [
+      131.0,
+      122.0
+    ],
+    "source_scale": [
+      0.32432432432432434,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "cross",
+    "source_port_center": [
+      135.0,
+      122.0
+    ],
+    "source_scale": [
+      0.32432432432432434,
+      0.3157894736842105
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "straight",
+    "source_port_center": [
+      148.25,
+      122.0
+    ],
+    "source_scale": [
+      0.3526170798898072,
+      0.26229508196721313
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "curve",
+    "source_port_center": [
+      73.0,
+      126.0
+    ],
+    "source_scale": [
+      0.4507042253521127,
+      0.5
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "tee",
+    "source_port_center": [
+      132.0,
+      125.0
+    ],
+    "source_scale": [
+      0.6037735849056604,
+      0.5
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "cross",
+    "source_port_center": [
+      134.5,
+      124.0
+    ],
+    "source_scale": [
+      0.5565217391304348,
+      0.5079365079365079
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "straight",
+    "source_port_center": [
+      120.0,
+      122.0
+    ],
+    "source_scale": [
+      0.2823529411764706,
+      0.26229508196721313
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "curve",
+    "source_port_center": [
+      73.5,
+      137.0
+    ],
+    "source_scale": [
+      0.4413793103448276,
+      0.41025641025641024
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "tee",
+    "source_port_center": [
+      133.0,
+      136.0
+    ],
+    "source_scale": [
+      0.47058823529411764,
+      0.41025641025641024
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "cross",
+    "source_port_center": [
+      135.0,
+      136.25
+    ],
+    "source_scale": [
+      0.5,
+      0.4115755627009646
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "straight",
+    "source_port_center": [
+      121.25,
+      125.5
+    ],
+    "source_scale": [
+      0.3775811209439528,
+      0.2549800796812749
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "curve",
+    "source_port_center": [
+      74.0,
+      135.0
+    ],
+    "source_scale": [
+      0.4444444444444444,
+      0.43243243243243246
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "tee",
+    "source_port_center": [
+      134.0,
+      135.0
+    ],
+    "source_scale": [
+      0.4507042253521127,
+      0.43243243243243246
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "cross",
+    "source_port_center": [
+      135.0,
+      135.0
+    ],
+    "source_scale": [
+      0.4383561643835616,
+      0.43243243243243246
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "straight",
+    "source_port_center": [
+      117.25,
+      120.5
+    ],
+    "source_scale": [
+      0.2587601078167116,
+      0.26556016597510373
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "curve",
+    "source_port_center": [
+      78.0,
+      141.0
+    ],
+    "source_scale": [
+      0.41025641025641024,
+      0.3595505617977528
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "tee",
+    "source_port_center": [
+      133.0,
+      141.0
+    ],
+    "source_scale": [
+      0.463768115942029,
+      0.3595505617977528
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "cross",
+    "source_port_center": [
+      134.5,
+      140.5
+    ],
+    "source_scale": [
+      0.4507042253521127,
+      0.3615819209039548
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "straight",
+    "source_port_center": [
+      120.75,
+      142.5
+    ],
+    "source_scale": [
+      0.2467866323907455,
+      0.22456140350877193
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "curve",
+    "source_port_center": [
+      91.5,
+      157.5
+    ],
+    "source_scale": [
+      0.3575418994413408,
+      0.30917874396135264
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "tee",
+    "source_port_center": [
+      133.0,
+      157.5
+    ],
+    "source_scale": [
+      0.47761194029850745,
+      0.30917874396135264
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "cross",
+    "source_port_center": [
+      134.5,
+      157.5
+    ],
+    "source_scale": [
+      0.39751552795031053,
+      0.30917874396135264
+    ]
+  }
+]

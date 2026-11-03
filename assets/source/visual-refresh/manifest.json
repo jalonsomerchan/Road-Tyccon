@@ -1,0 +1,61 @@
+{
+  "generator": "built-in image_gen",
+  "raw_images": 13,
+  "roads": {
+    "count": 96,
+    "directory": "assets/sprites/roads-v5",
+    "shapes": [
+      "straight",
+      "curve",
+      "tee",
+      "cross"
+    ],
+    "types": [
+      "dirt",
+      "gravel",
+      "concrete",
+      "local",
+      "secondary",
+      "main",
+      "express",
+      "dual",
+      "motorway",
+      "premium",
+      "wood_bridge",
+      "stone_bridge",
+      "concrete_bridge",
+      "steel_bridge",
+      "cable_bridge",
+      "suspension_bridge",
+      "forest",
+      "farm",
+      "cobble",
+      "residential",
+      "avenue",
+      "county",
+      "ring",
+      "superhighway"
+    ]
+  },
+  "vehicles": {
+    "count": 8,
+    "directory": "assets/sprites/vehicles-v2"
+  },
+  "urban_assets": {
+    "count": 8,
+    "directory": "assets/sprites/city-v2",
+    "names": [
+      "villa",
+      "slate_house",
+      "timber_house",
+      "apartment",
+      "brick_block",
+      "warehouse",
+      "civic",
+      "park"
+    ]
+  },
+  "prompts": "assets/source/visual-refresh/prompts.md",
+  "processor": "tools/prepare_visual_refresh.py",
+  "validation": "tests/visual_refresh.gd"
+}

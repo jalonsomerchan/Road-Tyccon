@@ -1,0 +1,2378 @@
+[
+  {
+    "kind": "dirt",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      18,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "dirt",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      14,
+      0,
+      50,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      17,
+      0,
+      48,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      15,
+      0,
+      49,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "gravel",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      11,
+      0,
+      53,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      22,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      18,
+      0,
+      48,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      22,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      17,
+      0,
+      47,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      22,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "concrete",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      13,
+      0,
+      50,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "local",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "secondary",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "main",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "express",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "dual",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "motorway",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "premium",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      18,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      16,
+      0,
+      48,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      1,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "forest",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      23,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      19,
+      0,
+      47,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "farm",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      17,
+      0,
+      47,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      17,
+      0,
+      47,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      21,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "cobble",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      16,
+      0,
+      48,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "residential",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "avenue",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "county",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "ring",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "burning",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "snowy",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "very_damaged",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "extreme_damage",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "closed",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "fading",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "roundabout",
+    "size": 192,
+    "bbox": [
+      0,
+      0,
+      192,
+      192
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "state": "signal",
+    "size": 64,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b5u8al16mnhhn"]
+
+[ext_resource type="Script" uid="uid://c0el4gfgi14cw" path="res://scripts/game.gd" id="1"]
+
+[node name="EntreCiudades" type="Node2D" unique_id=8248294]
+script = ExtResource("1")

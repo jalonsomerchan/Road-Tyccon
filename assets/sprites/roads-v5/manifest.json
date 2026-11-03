@@ -1,0 +1,47 @@
+{
+  "generator": "built-in image_gen",
+  "count": 96,
+  "slugs": [
+    "dirt",
+    "gravel",
+    "concrete",
+    "local",
+    "secondary",
+    "main",
+    "express",
+    "dual",
+    "motorway",
+    "premium",
+    "wood_bridge",
+    "stone_bridge",
+    "concrete_bridge",
+    "steel_bridge",
+    "cable_bridge",
+    "suspension_bridge",
+    "forest",
+    "farm",
+    "cobble",
+    "residential",
+    "avenue",
+    "county",
+    "ring",
+    "superhighway"
+  ],
+  "shapes": [
+    "straight",
+    "curve",
+    "tee",
+    "cross"
+  ],
+  "ports": [
+    "NS",
+    "NE",
+    "NEW",
+    "NESW"
+  ],
+  "size": 64,
+  "registration": "shared straight-edge six-pixel seams; affine carriageway and port registration; nearest-neighbor; opaque multilane footprints",
+  "overrides": {
+    "residential": "assets/source/residential-centered/registration.json"
+  }
+}

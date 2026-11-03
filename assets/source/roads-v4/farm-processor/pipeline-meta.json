@@ -1,0 +1,175 @@
+{
+  "target": "asset",
+  "mode": "sheet",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/jorgealonso/Proyectos/new-road-tyccon/assets/source/roads-v4/farm-raw.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 64,
+  "fit_scale": 1.0,
+  "trim_border": 0,
+  "edge_clean_depth": 0,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "variant-1",
+    "variant-2",
+    "variant-3",
+    "variant-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 5,
+      "selected_component_area": 77053,
+      "selected_component_bbox": [
+        231,
+        48,
+        395,
+        579
+      ],
+      "crop_bbox": [
+        231,
+        48,
+        395,
+        579
+      ],
+      "edge_touch": false,
+      "output_size": [
+        19,
+        62
+      ],
+      "paste_position": [
+        22,
+        1
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 11,
+      "selected_component_area": 90207,
+      "selected_component_bbox": [
+        133,
+        48,
+        582,
+        460
+      ],
+      "crop_bbox": [
+        133,
+        48,
+        582,
+        460
+      ],
+      "edge_touch": false,
+      "output_size": [
+        53,
+        48
+      ],
+      "paste_position": [
+        5,
+        8
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 9,
+      "selected_component_area": 105127,
+      "selected_component_bbox": [
+        43,
+        39,
+        584,
+        381
+      ],
+      "crop_bbox": [
+        43,
+        39,
+        584,
+        381
+      ],
+      "edge_touch": false,
+      "output_size": [
+        64,
+        40
+      ],
+      "paste_position": [
+        0,
+        12
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 12,
+      "selected_component_area": 135646,
+      "selected_component_bbox": [
+        43,
+        39,
+        584,
+        578
+      ],
+      "crop_bbox": [
+        43,
+        39,
+        584,
+        578
+      ],
+      "edge_touch": false,
+      "output_size": [
+        64,
+        63
+      ],
+      "paste_position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

@@ -1,0 +1,1538 @@
+[
+  {
+    "kind": "dirt",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      19,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      19,
+      0,
+      64,
+      45
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      49
+    ]
+  },
+  {
+    "kind": "dirt",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      19,
+      0,
+      45,
+      64
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      19,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      50
+    ]
+  },
+  {
+    "kind": "gravel",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      47
+    ]
+  },
+  {
+    "kind": "concrete",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "local",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "secondary",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "main",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "express",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "straight",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "curve",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "tee",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "dual",
+    "shape": "cross",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "straight",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "curve",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "tee",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "motorway",
+    "shape": "cross",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "straight",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "curve",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "tee",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "premium",
+    "shape": "cross",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "wood_bridge",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "stone_bridge",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "concrete_bridge",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "straight",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "curve",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "tee",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "steel_bridge",
+    "shape": "cross",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "straight",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "curve",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "tee",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cable_bridge",
+    "shape": "cross",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "straight",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "curve",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "tee",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "suspension_bridge",
+    "shape": "cross",
+    "lanes": 6,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      17,
+      0,
+      47,
+      64
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      17,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      47
+    ]
+  },
+  {
+    "kind": "forest",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      18,
+      0,
+      46,
+      64
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      19,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      46
+    ]
+  },
+  {
+    "kind": "farm",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "straight",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      44,
+      64
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "curve",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      20,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "tee",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      44
+    ]
+  },
+  {
+    "kind": "cobble",
+    "shape": "cross",
+    "lanes": 1,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 0,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "residential",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "straight",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "curve",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "tee",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "avenue",
+    "shape": "cross",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "straight",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "curve",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "tee",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "county",
+    "shape": "cross",
+    "lanes": 2,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "straight",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "curve",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "tee",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "ring",
+    "shape": "cross",
+    "lanes": 4,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "straight",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "curve",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "tee",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  },
+  {
+    "kind": "superhighway",
+    "shape": "cross",
+    "lanes": 8,
+    "size": [
+      64,
+      64
+    ],
+    "alpha_min": 255,
+    "bbox": [
+      0,
+      0,
+      64,
+      64
+    ]
+  }
+]
