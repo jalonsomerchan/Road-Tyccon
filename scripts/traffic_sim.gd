@@ -102,15 +102,34 @@ func position(car: Dictionary) -> Vector2i:
 func capacity(p: Vector2i) -> int:
 	return maxi(1,int(g.Catalog.ROADS[g.roads[p].kind].cap*g.services.capacity_factor(p))) if g.roads.has(p) else MAX_VISIBLE_CARS
 
-func route(start: Vector2i, dest: int) -> PackedVector2Array:
-	var key = Vector3i(start.x, start.y, dest)
+func route(start: Vector2i, dest: int, incoming: Vector2i = Vector2i.ZERO) -> PackedVector2Array:
+	var key = Vector3i(start.x,start.y,dest) if incoming==Vector2i.ZERO else Vector4i(start.x,start.y,dest,g.graph.direction_index(incoming))
 	if not g.route_cache.has(key):
-		g.route_cache[key] = g.graph.get_point_path(g.point_id(start), g.point_id(g.cities[dest].pos)) if g.graph.has_point(g.point_id(start)) else PackedVector2Array()
+		g.route_cache[key] = g.graph.driving_path(g.point_id(start),g.point_id(g.cities[dest].pos),incoming) if g.graph.has_point(g.point_id(start)) else PackedVector2Array()
 	var path: PackedVector2Array = g.route_cache[key]
 	if path.size() > 1:
 		if history.size() >= 512 and not history.has(key): history.erase(history.keys()[0])
 		history[key] = path
 	return path
+
+func incoming_direction(car: Dictionary) -> Vector2i:
+	if car.step>0: return Vector2i(car.path[car.step]-car.path[car.step-1])
+	return car.get("incoming",Vector2i.ZERO)
+
+func curve_factor(car: Dictionary) -> float:
+	if car.step+1>=car.path.size(): return 1.0
+	var p = position(car)
+	var outgoing = Vector2i(car.path[car.step+1])-p
+	if g.graph.has_point(g.point_id(p)):
+		return g.graph.passage_factor(g.point_id(p),incoming_direction(car),outgoing)
+	return g.graph.turn_factor(incoming_direction(car),outgoing)
+
+func driving_speed(car: Dictionary) -> float:
+	var p = position(car)
+	if not g.roads.has(p): return 0.0
+	var road = g.roads[p]
+	var spec = g.Catalog.ROADS[road.kind]
+	return spec.speed*(0.35+0.65*road.hp/100.0)*g.services.speed_factor(p)*(0.8 if g.gameplay.profile(g.cities[car.origin])==1 else 1.0)*curve_factor(car)
 
 func admit() -> void:
 	if g.cars.size() >= MAX_VISIBLE_CARS: return
@@ -172,7 +191,8 @@ func step_traffic(dt: float) -> void:
 		if car.get("route_revision", -1) != g.road_revision or car.path.size() < 2:
 			var previous_next = Vector2i(car.path[car.step+1]) if car.step+1<car.path.size() else p
 			var previous_progress: float = car.t
-			var replacement = route(p, car.dest)
+			car.incoming=incoming_direction(car)
+			var replacement = route(p,car.dest,car.incoming)
 			if replacement.size() > 1:
 				car.path = replacement
 				car.step = 0
@@ -187,12 +207,10 @@ func step_traffic(dt: float) -> void:
 		if not allowed or not g.incidents.signal_allows(next,next-p):
 			car.blocked = true
 			continue
-		var v = 3.5
-		if g.roads.has(p):
-			var r = g.roads[p]
-			var spec = g.Catalog.ROADS[r.kind]
-			v = spec.speed * (0.35 + 0.65 * r.hp / 100.0)*g.services.speed_factor(p)*(0.8 if g.gameplay.profile(g.cities[car.origin])==1 else 1.0)
-			r.hp = maxf(Settings.ROAD_MIN_HEALTH, r.hp - dt * Settings.ROAD_TRAFFIC_WEAR)
+		var v = driving_speed(car)
+		car.step_speed=v
+		var r = g.roads[p]
+		r.hp = maxf(Settings.ROAD_MIN_HEALTH,r.hp-dt*Settings.ROAD_TRAFFIC_WEAR)
 		car.t = minf(1.999999, car.t + dt * v)
 	# Mantener separación en cada tramo dirigido. Al limitar el avance del coche
 	# que va detrás, también queda detenido cuando el de delante espera en un cruce.
@@ -280,8 +298,10 @@ func commit_move(move: Dictionary, finished: Dictionary, release: bool = true) -
 	var car = move.car
 	if release: g.density[move.p] = maxi(0,int(g.density.get(move.p,1))-1)
 	g.density[move.q] = int(g.density.get(move.q,0))+1
+	var remaining_time = maxf(0,car.t-1)/maxf(0.001,car.get("step_speed",driving_speed(car)))
+	car.incoming=move.q-move.p
 	car.step += 1
-	car.t = maxf(0,car.t-1)
+	car.t = remaining_time*driving_speed(car)
 	car.blocked = false
 	g.incidents.used(move.q)
 	if car.step >= car.path.size()-1 and move.q == g.cities[car.dest].pos:
@@ -308,6 +328,8 @@ func snapshot() -> Dictionary:
 	var vehicles: Array = []
 	for car in g.cars:
 		var data = car.duplicate()
+		data.incoming=incoming_direction(car)
+		data.erase("step_speed")
 		data.erase("path")
 		data.erase("step")
 		data.pos = position(car)
@@ -342,6 +364,7 @@ func restore(data: Dictionary) -> void:
 				var candidate = Vector2(p).distance_squared_to(Vector2(start))
 				if candidate<distance: nearest=p; distance=candidate
 			start=nearest; next=nearest
+		if start!=car.pos: car.incoming=Vector2i.ZERO
 		car.path = PackedVector2Array([Vector2(start),Vector2(next)]) if start!=next else PackedVector2Array([Vector2(start)])
 		car.step = 0
 		car.t = clampf(car.get("t",0.0),0,1) if start!=next else 0.0

@@ -280,6 +280,7 @@ func car_reason(car: Dictionary) -> String:
 	if not g.road_open(next): return "Corte de carretera por delante"
 	if not g.incidents.signal_allows(next,next-p): return "Semáforo en rojo"
 	if car.get("blocked",false): return "Cola o capacidad agotada"
+	if g.traffic.curve_factor(car)<1: return "Tomando curva · Velocidad al %d %% · "%roundi(g.WorldSettings.CURVE_SPEED_FACTOR*100)+g.cities[car.dest].name
 	return "Circulando hacia "+g.cities[car.dest].name
 
 func inspected_car() -> Dictionary:

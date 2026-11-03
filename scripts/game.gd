@@ -314,10 +314,13 @@ func rebuild_graph() -> void:
 	refresh_city_connectors()
 	road_revision += 1
 	graph.clear()
+	graph.minimum_step_cost=INF
 	route_cache.clear()
 	for p in roads:
 		if road_open(p):
-			graph.add_point(point_id(p), Vector2(p), 1.0 / Catalog.ROADS[roads[p].kind].speed * (1.0 if road_nodes.has(p) else 2.5))
+			var cost = 1.0 / Catalog.ROADS[roads[p].kind].speed * (1.0 if road_nodes.has(p) else 2.5)
+			graph.add_point(point_id(p),Vector2(p),cost)
+			graph.minimum_step_cost=minf(graph.minimum_step_cost,cost)
 	for id in graph.get_point_ids():
 		var p = Vector2i(graph.get_point_position(id))
 		for d in DIRS:

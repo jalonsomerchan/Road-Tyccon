@@ -82,7 +82,9 @@ def update():
             for member in z.infolist():
                 target = (staging / member.filename).resolve()
 
-                if not target.is_relative_to(staging.resolve()):
+                try:
+                    target.relative_to(staging.resolve())
+                except ValueError:
                     raise RuntimeError("Ruta insegura en ZIP")
 
                 mode = (member.external_attr >> 16) & 0o170000

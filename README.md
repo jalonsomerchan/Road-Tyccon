@@ -66,6 +66,8 @@ Cada tipo tiene cuatro sprites propios: **recta, curva, cruce en T y cruce de cu
 
 Construir, reparar y mejorar lleva tiempo. Cierra antes de reparar o mejorar y vuelve a abrir después. Las obras se marcan en ámbar y los cierres con cruces, barreras y luces rojas. Los ríos requieren puentes; las montañas y los roquedos obligan a rodearlos. Los costes y tiempos iniciales se pueden ajustar en `scripts/catalog.gd`.
 
+Las **curvas y los giros reducen la velocidad al 60 %** (un 40 % menos), ajustable mediante `CURVE_SPEED_FACTOR` en `scripts/world_settings.gd`. La penalización depende de la maniobra real: girar en un cruce ralentiza al coche, mientras que atravesarlo en línea recta mantiene su velocidad. El cálculo de rutas considera la dirección de llegada y ese tiempo extra, de modo que favorece los trazados más rectos cuando resultan más rápidos. La reducción se combina con el estado de la vía, los vehículos industriales y las obras parciales. La dirección se conserva al recalcular rutas y al guardar/cargar, y la inspección de vehículos indica cuándo están tomando una curva.
+
 ## Región y ciudades
 
 El mapa empieza con **2.048 × 2.048 casillas** y se amplía al explorar, sin un borde de juego fijo. Las regiones descubiertas son de 1.024 × 1.024; el terreno se materializa bajo demanda en bloques de 32 × 32 con una caché limitada. Se puede avanzar en cualquier dirección, incluidas coordenadas negativas. El guardado conserva las regiones descubiertas, sus ciudades, la semilla y las modificaciones; las zonas visitadas no cambian ni duplican ciudades al regresar.

@@ -6,6 +6,8 @@ func run() -> void:
 	var g=load("res://scenes/main.tscn").instantiate()
 	root.add_child(g);g.set_process(false)
 	assert(g.money==S.STARTING_MONEY and g.accounts.opening==S.STARTING_MONEY)
+	assert(g.graph.turn_factor(Vector2i.RIGHT,Vector2i.UP)==S.CURVE_SPEED_FACTOR)
+	assert(g.graph.turn_factor(Vector2i.RIGHT,Vector2i.RIGHT)==1.0)
 	assert(g.world_seed==S.WORLD_SEED and g.cities.size()==S.INITIAL_CITY_COUNT)
 	assert(g.cities[0].radius==S.START_CITY_RADIUS)
 	assert(g.cities[0].pop==(S.START_CITY_RADIUS-1)*S.POPULATION_PER_RADIUS+S.CITY_BASE_POPULATION)

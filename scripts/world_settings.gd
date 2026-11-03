@@ -56,6 +56,7 @@ const DEMAND_BASE_CARS = 1
 const DEMAND_POPULATION_STEP = 2000 # Cada tantos habitantes añade un coche al lote.
 const DEMAND_MAX_CARS = 3 # Máximo por ciudad y lote.
 const MAX_VISIBLE_CARS = 350 # Resto en cola; no elimina viajes pendientes.
+const CURVE_SPEED_FACTOR = 0.6 # En curvas y giros: 60 % de la velocidad, reducción del 40 %.
 const TRIP_BASE_FARE = 20.0
 const TRIP_FARE_PER_CELL = 1.8
 const TRIP_REFERENCE_SPEED = 4.0 # Casillas/s para comparar tiempo ideal y real.
@@ -117,6 +118,7 @@ static func validate() -> void:
 	assert(CITY_STREET_BLOCK_SPACING>=3 and CITY_ACCESS_LENGTH>=1 and AVENUE_MIN_CITY_RADIUS>=1 and RESIDENTIAL_ROAD_KIND in range(24) and AVENUE_ROAD_KIND in range(24),"Revisa accesos e índices de vías urbanas")
 	assert(POPULATION_PER_RADIUS>0 and CITY_MIN_POPULATION>0 and CITY_GROWTH_INTERVAL>0,"Revisa población e intervalo de crecimiento")
 	assert(DEMAND_INTERVAL>0 and DEMAND_POPULATION_STEP>0 and DEMAND_MAX_CARS>0 and DEMAND_BASE_CARS>=0 and MAX_VISIBLE_CARS>0,"Revisa parámetros de tráfico")
+	assert(CURVE_SPEED_FACTOR>0 and CURVE_SPEED_FACTOR<=1,"CURVE_SPEED_FACTOR debe ser mayor que 0 y como máximo 1")
 	assert(TRIP_REFERENCE_SPEED>0 and TRIP_MIN_TIME_MULTIPLIER>=0 and TRIP_MAX_TIME_MULTIPLIER>=TRIP_MIN_TIME_MULTIPLIER,"Revisa ingresos por tiempo de viaje")
 	assert(ROAD_MIN_HEALTH>0 and ROAD_MIN_HEALTH<=100 and ROAD_PASSIVE_WEAR>=0 and ROAD_TRAFFIC_WEAR>=0,"Revisa conservación")
 	assert(STARTING_MONEY>=0 and TRIP_BASE_FARE>=0 and TRIP_FARE_PER_CELL>=0,"Los importes no pueden ser negativos")
