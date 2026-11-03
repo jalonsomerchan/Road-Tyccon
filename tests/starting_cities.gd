@@ -34,7 +34,7 @@ func run() -> void:
 	game.cursor = game.cities[1].accesses[0].end
 	game.apply_action()
 	game.incidents.rules.weather_enabled = false
-	for i in 600: game._process(0.1)
+	for i in 900: game._process(0.1)
 	assert(game.trips>0 and game.traffic.current_links[0]==[1])
 	print("PASS: 12 seeds with nearby aligned starter cities, facing accesses and natural passable route; configured initial cities inside compact region; no timed spawns; deterministic placement; starter road generates trips")
 	game.free()

@@ -59,6 +59,7 @@ func reset(new_mode: String = "free", scenario: String = "") -> void:
 	upkeep_clock = 0
 	monitor_clock = 0
 	alert_text = ""
+	alert_cell = g.NO_CELL
 	selected_ticket = -1
 	overlay = "none"
 	scenario_id = scenario
@@ -220,10 +221,12 @@ func upkeep_per_minute() -> float:
 	return cost
 
 func income_per_minute() -> float:
+	var last_minute = int(g.elapsed/60)
 	var value = 0.0
-	for minute in g.accounts.periods:
-		if minute>=int(g.elapsed/60)-5 and minute<int(g.elapsed/60): value+=g.accounts.periods[minute].income
-	return value/maxf(1,minf(5,floor(g.elapsed/60)))
+	for entry in g.accounts.entries:
+		if entry.category=="trips" and int(entry.at/60)>=maxi(0,last_minute-5) and int(entry.at/60)<last_minute:
+			value+=entry.amount
+	return value/maxi(1,mini(5,last_minute))
 
 func route_report(key: Vector2i) -> Dictionary:
 	var stats = routes[key]
@@ -242,6 +245,7 @@ func route_report(key: Vector2i) -> Dictionary:
 
 func diagnose() -> void:
 	alert_text = "Red fluida · Sin colas en accesos"
+	alert_cell = g.NO_CELL
 	var largest = 0
 	for i in g.cities.size():
 		var count = g.traffic.city_queue(i)

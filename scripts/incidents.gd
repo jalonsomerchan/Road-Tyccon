@@ -107,7 +107,11 @@ func update(dt: float) -> void:
 		if weather_clock >= rules.weather_interval:
 			weather_clock = fmod(weather_clock, rules.weather_interval)
 			if not g.roads.is_empty():
-				var seed: Vector2i = g.roads.keys()[g.rng.randi_range(0, g.roads.size() - 1)]
+				var candidates: Array = []
+				for p in g.roads:
+					if g.gameplay.is_player_road(p): candidates.append(p)
+				if candidates.is_empty(): candidates=g.roads.keys()
+				var seed: Vector2i = candidates[g.rng.randi_range(0,candidates.size()-1)]
 				if g.gameplay.weather_kind()=="snow": snow_zone(seed, int(rules.snow_radius))
 				else: ignite(seed)
 				g.gameplay.weather_dispatched()

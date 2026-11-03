@@ -78,6 +78,9 @@ func spawn_demand() -> void:
 		var dest: int = g.gameplay.choose_destination(origin,destinations)
 		var count = mini(Settings.DEMAND_MAX_CARS,Settings.DEMAND_BASE_CARS+int(g.cities[origin].pop/Settings.DEMAND_POPULATION_STEP))
 		count=g.gameplay.demand_count(origin,count)
+		if not g.cities[origin].get("departure_started",false):
+			count=maxi(1,count)
+			g.cities[origin].departure_started=true
 		if count<=0: continue
 		var key = Vector2i(origin, dest)
 		if not pending.has(key): pending[key] = []

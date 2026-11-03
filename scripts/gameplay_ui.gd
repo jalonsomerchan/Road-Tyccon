@@ -53,7 +53,9 @@ func action(value: String) -> void:
 		"weather":
 			if g.inside(g.incidents.last_alert): g.travel_to(g.incidents.last_alert)
 			else: g.tell("Todavía no hay fenómenos meteorológicos activos.")
-		"alert": g.travel_to(g.gameplay.alert_cell)
+		"alert":
+			if g.inside(g.gameplay.alert_cell): g.travel_to(g.gameplay.alert_cell)
+			else: g.tell("La red no tiene puntos problemáticos detectados.")
 		"car": g.gameplay.select_car_at(g.cursor)
 		"follow":
 			var car = g.gameplay.inspected_car()
@@ -111,7 +113,11 @@ func draw_objectives() -> void:
 	elif not gp.review.is_empty(): v.text(Vector2(160,634),"Evaluando tu intervención: se comparará tras 60 s y al menos 5 viajes.",15,v.MUTED)
 
 func draw_network() -> void:
-	for i in 3: button(Rect2(160+i*322,156,310,36),["Tramos y mantenimiento","Tráfico y emergencias","Economía de la red"][i],"play:tab:"+str(i))
+	for i in 3:
+		var area = Rect2(160+i*322,156,310,36)
+		v.button(area,["Tramos y mantenimiento","Tráfico y emergencias","Economía de la red"][i],"play:tab:"+str(i),i==tab)
+		if actions.size()==focus_index: v.canvas.draw_rect(area.grow(2),v.PAPER,false,1)
+		actions.append("play:tab:"+str(i))
 	match tab:
 		0: draw_services()
 		1: draw_traffic()
@@ -126,7 +132,7 @@ func draw_services() -> void:
 		condition+=g.roads[p].hp
 		if g.roads[p].get("reserve",false): reserve_count+=1
 	v.text(Vector2(160,230),"TRAMO DEL CURSOR · %d casillas"%targets.size(),21,v.GREEN)
-	v.text(Vector2(160,260),"Conservación media %.0f %% · %d casillas en reserva"%[condition/maxi(1,targets.size()),reserve_count],15,v.MUTED)
+	v.text(Vector2(160,260),"Conservación media %.1f %% · %d casillas en reserva"%[condition/maxi(1,targets.size()),reserve_count],15,v.MUTED)
 	button(Rect2(160,286,454,40),"Seleccionar hasta los cruces","play:segment")
 	button(Rect2(638,286,480,40),"Reserva: activar / retirar (+35 % coste)","play:reserve")
 	button(Rect2(160,340,454,40),"Reparación: "+("parcial · tráfico al 50 %" if service.repair_mode=="partial" else "cierre · reapertura automática"),"play:repair_mode")

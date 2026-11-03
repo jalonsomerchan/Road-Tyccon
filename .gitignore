@@ -1,0 +1,19 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Exported binaries and temporary validation artifacts
+builds/
+tests/test_save.bin
+tests/*.png
+
+tests/title_save.bin
+
+tests/visual_save.bin
+
+tests/expanding_save.bin
+.godot/
+.DS_Store
+build/
+dist/
+*.tmp

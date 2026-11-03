@@ -66,7 +66,7 @@ func quote(targets: Array, partial: bool) -> float:
 		if not g.roads.has(p): continue
 		var road = g.roads[p]
 		if road.hp>=99.9 or road.work>0 or service_jobs.has(p): continue
-		cost+=g.Catalog.ROADS[road.kind].cost*0.25*(1.5 if partial else 1.0)
+		cost+=g.Catalog.ROADS[road.kind].cost*g.WorldSettings.REPAIR_COST_RATIO*(1.5 if partial else 1.0)
 	return cost
 
 func repair(targets: Array, partial: bool, automatic: bool = false) -> bool:

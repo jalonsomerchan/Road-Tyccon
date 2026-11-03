@@ -39,12 +39,16 @@ func run() -> void:
 	assert(game.graph.get_point_path(game.point_id(Vector2i(100,100)), game.point_id(Vector2i(130,100))).is_empty())
 	for i in 300: game._process(0.1)
 	assert(game.trips > 0 and game.earned > 0 and game.money > funds)
-	# Every street exit is a connector, including the north side.
+	# Use a city plan with an actual north street to test its connector.
+	game.cities[0].radius=2
+	game.cities[0].design_style=0
+	game.rebuild_city_lookup()
+	game.ensure_city_accesses()
 	game.anchor = Vector2i(100,90)
-	game.cursor = Vector2i(100,98)
+	game.cursor = Vector2i(100,97)
 	game.apply_action()
 	for i in 20: game._process(0.1)
-	assert(game.city_connectors[Vector2i(100,98)]==0 and game.edge_allowed(Vector2i(100,98), Vector2i(100,99)))
+	assert(game.city_connectors[Vector2i(100,97)]==0 and game.edge_allowed(Vector2i(100,97), Vector2i(100,98)))
 	assert(not game.graph.get_point_path(game.point_id(Vector2i(100,90)), game.point_id(Vector2i(100,100))).is_empty())
 	game.anchor = game.NO_CELL
 	game.cursor = Vector2i(110,100)

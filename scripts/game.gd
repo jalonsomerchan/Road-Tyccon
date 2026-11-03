@@ -176,6 +176,9 @@ func generate_world() -> void:
 	cursor = cities[0].accesses[0].end
 	camera = Vector2(cursor)
 	gameplay.prepare_cities()
+	if gameplay.mode=="scenario" and gameplay.scenario_id=="winter":
+		incidents.rules.weather_interval=90.0
+		incidents.rules.snow_chance=1.0
 
 func generate_initial_cities() -> void:
 	# Emplazamientos escalonados: permiten una región densa sin atascar un
@@ -869,7 +872,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				cursor = Vector2i(((event.position-Vector2(640,400))/tile+camera+Vector2(0.5,0.5)).floor())
 				explore_around(Vector2(cursor))
 				hover_cell = cursor
-				if event.ctrl_pressed: gameplay.select_car_at(cursor); open_panel("network")
+				if event.ctrl_pressed: gameplay.select_car_at(cursor); gameplay_ui.tab=1; open_panel("network")
 				else: apply_action()
 	if event is InputEventJoypadMotion:
 		if absf(event.axis_value)>0.4: last_pad = true; hover_cell = NO_CELL
@@ -946,7 +949,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_V,KEY_Y: open_road_selector()
 			KEY_H: open_panel("help")
 			KEY_I: open_panel("info")
-			KEY_C: gameplay.select_car_at(cursor); open_panel("network")
+			KEY_C: gameplay.select_car_at(cursor); gameplay_ui.tab=1; open_panel("network")
 			KEY_L: gameplay_ui.cycle_overlay()
 			KEY_Z: if event.ctrl_pressed: services.undo_build()
 			KEY_K: open_panel("objectives")
@@ -1161,7 +1164,7 @@ func new_game() -> void:
 	road_nodes.clear()
 	cities.clear()
 	cars.clear()
-	money = WorldSettings.STARTING_MONEY
+	money = gameplay.scenario().money if gameplay.mode=="scenario" else WorldSettings.STARTING_MONEY
 	earned = 0.0
 	display_money = money
 	money_popups.clear()

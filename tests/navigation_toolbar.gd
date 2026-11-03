@@ -10,7 +10,7 @@ func run() -> void:
 	root.add_child(game)
 	game.set_process(false)
 	assert(game.TOOLS.size()==6)
-	assert(game.MENU_ACTIONS==["cities","map","stats","accounts"])
+	assert(game.MENU_ACTIONS==["cities","map","stats","accounts","objectives","network","scenarios"])
 	for i in 5:
 		press(game,JOY_BUTTON_RIGHT_SHOULDER)
 		assert(game.tool==i+1)

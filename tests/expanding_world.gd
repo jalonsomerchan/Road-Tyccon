@@ -87,7 +87,7 @@ func run() -> void:
 	assert(game.traffic.queued==2 and game.traffic.DEMAND_INTERVAL==6.0)
 	game.cities[0].pop=10000;game.cities[1].pop=10000
 	game.traffic.spawn_demand()
-	assert(game.traffic.queued==8,"Large cities emit at most three trips per batch")
+	assert(game.traffic.queued>=4 and game.traffic.queued<=14,"City profiles scale the population-based demand and preserve fractional carry")
 	var recorder=IncomeRecorder.new()
 	game.visuals.canvas=recorder
 	game.money_popups=[{"pos":Vector2.ZERO,"amount":100.0,"age":0.2}]

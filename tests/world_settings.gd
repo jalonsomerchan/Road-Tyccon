@@ -41,8 +41,10 @@ func run() -> void:
 	g.traffic.reset();g.cars.clear()
 	g.cities[0].unlocked=[1]
 	g.cities[0].pop=S.DEMAND_POPULATION_STEP*2
+	g.cities[0].profile=0
+	g.elapsed=120
 	g.spawn_trips()
-	assert(g.cars.size()+g.traffic.queued==mini(S.DEMAND_MAX_CARS,S.DEMAND_BASE_CARS+2))
+	assert(g.cars.size()+g.traffic.queued==int(mini(S.DEMAND_MAX_CARS,S.DEMAND_BASE_CARS+2)*1.8))
 	var money=g.money
 	g.traffic.complete({"ideal":10.0,"age":10.0,"dest":1})
 	var expected=(S.TRIP_BASE_FARE+10*S.TRIP_REFERENCE_SPEED*S.TRIP_FARE_PER_CELL)*clampf(1.0,S.TRIP_MIN_TIME_MULTIPLIER,S.TRIP_MAX_TIME_MULTIPLIER)
