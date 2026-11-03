@@ -10,6 +10,9 @@ func press(game, key: int, pad: bool = true) -> void:
 		event.physical_keycode = key
 	event.pressed = true
 	game._unhandled_input(event)
+	if event is InputEventJoypadButton:
+		event.pressed=false
+		game._unhandled_input(event)
 func run() -> void:
 	var path = "res://tests/title_save.bin"
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))

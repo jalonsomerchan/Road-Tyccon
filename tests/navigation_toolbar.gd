@@ -5,6 +5,9 @@ func press(game, index: int) -> void:
 	event.button_index = index
 	event.pressed = true
 	game._unhandled_input(event)
+	if event is InputEventJoypadButton:
+		event.pressed=false
+		game._unhandled_input(event)
 func run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
@@ -26,13 +29,13 @@ func run() -> void:
 	var old_zoom: float = game.zoom_target
 	var old_kind: int = game.kind
 	var trigger = InputEventJoypadMotion.new()
-	trigger.axis = JOY_AXIS_TRIGGER_RIGHT
-	trigger.axis_value = 1
-	game._unhandled_input(trigger)
+	trigger.axis=JOY_AXIS_TRIGGER_RIGHT;trigger.axis_value=1
+	game._unhandled_input(trigger);game.deck_input.update(.1)
 	assert(game.zoom_target>old_zoom and game.kind==old_kind)
-	trigger.axis = JOY_AXIS_TRIGGER_LEFT
-	game._unhandled_input(trigger)
+	trigger.axis=JOY_AXIS_TRIGGER_RIGHT;trigger.axis_value=0;game._unhandled_input(trigger)
+	trigger.axis=JOY_AXIS_TRIGGER_LEFT;trigger.axis_value=1;game._unhandled_input(trigger);game.deck_input.update(.1)
 	assert(is_equal_approx(game.zoom_target,old_zoom))
+	trigger.axis_value=0;game._unhandled_input(trigger)
 	press(game,JOY_BUTTON_Y)
 	assert(game.panel=="catalog")
 	press(game,JOY_BUTTON_DPAD_DOWN)

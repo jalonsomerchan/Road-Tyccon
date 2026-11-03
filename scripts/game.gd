@@ -49,6 +49,8 @@ var accounts
 var maintenance
 var navigator
 var cheats
+var menu_focus
+var deck_input
 var gameplay
 var services
 var gameplay_ui
@@ -128,6 +130,8 @@ func _ready() -> void:
 	gameplay = preload("res://scripts/gameplay.gd").new(self)
 	services = preload("res://scripts/network_services.gd").new(self)
 	gameplay_ui = preload("res://scripts/gameplay_ui.gd").new(self)
+	menu_focus = preload("res://scripts/menu_focus.gd").new(self)
+	deck_input = preload("res://scripts/deck_input.gd").new(self)
 	visuals = preload("res://scripts/visuals.gd").new(self)
 	cheats = preload("res://scripts/cheat_console.gd").new(self)
 	add_child(cheats)
@@ -334,13 +338,8 @@ func rebuild_graph() -> void:
 
 func _process(delta: float) -> void:
 	visual_clock += delta
+	deck_input.update(delta)
 	if at_title:
-		ui_move_clock -= delta
-		if ui_move_clock<=0 and not Input.get_connected_joypads().is_empty():
-			var pad = Input.get_connected_joypads()[0]
-			var axis = JOY_AXIS_LEFT_X if title_confirm_new else JOY_AXIS_LEFT_Y
-			var value = Input.get_joy_axis(pad,axis)
-			if absf(value)>0.6: title_move(int(sign(value))); ui_move_clock = 0.2
 		queue_redraw()
 		return
 	tile = lerpf(tile, zoom_target, minf(1, delta * 14))
@@ -362,25 +361,13 @@ func _process(delta: float) -> void:
 	move_clock -= delta
 	ui_move_clock -= delta
 	var move = Vector2i.ZERO
-	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): move.y -= 1
-	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): move.y += 1
-	if not Input.is_physical_key_pressed(KEY_A): event_notices.suppress_a=false
-	if (Input.is_physical_key_pressed(KEY_A) and not event_notices.suppress_a) or Input.is_physical_key_pressed(KEY_LEFT): move.x -= 1
-	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT): move.x += 1
-	if not Input.get_connected_joypads().is_empty():
-		var pad = Input.get_connected_joypads()[0]
-		var stick = Vector2(Input.get_joy_axis(pad, JOY_AXIS_LEFT_X), Input.get_joy_axis(pad, JOY_AXIS_LEFT_Y))
-		var zoom_axis = Input.get_joy_axis(pad,JOY_AXIS_TRIGGER_RIGHT)-Input.get_joy_axis(pad,JOY_AXIS_TRIGGER_LEFT)
-		if absf(zoom_axis)>0.1 and panel in ["","map"]: zoom_control(exp(zoom_axis*delta*1.4))
-		if abs(stick.x) > 0.4: move.x = int(sign(stick.x))
-		if abs(stick.y) > 0.4: move.y = int(sign(stick.y))
-		if Input.is_joy_button_pressed(pad, JOY_BUTTON_DPAD_LEFT): move.x = -1
-		if Input.is_joy_button_pressed(pad, JOY_BUTTON_DPAD_RIGHT): move.x = 1
-		if Input.is_joy_button_pressed(pad, JOY_BUTTON_DPAD_UP): move.y = -1
-		if Input.is_joy_button_pressed(pad, JOY_BUTTON_DPAD_DOWN): move.y = 1
-		if panel != "" and panel != "map" and ui_move_clock<=0:
-			if absf(stick.x)>0.6: panel_move(int(sign(stick.x)),0); ui_move_clock=0.18
-			elif absf(stick.y)>0.6: panel_move(0,int(sign(stick.y))); ui_move_clock=0.18
+	if deck_input.keyboard_down(KEY_W) or deck_input.keyboard_down(KEY_UP): move.y -= 1
+	if deck_input.keyboard_down(KEY_S) or deck_input.keyboard_down(KEY_DOWN): move.y += 1
+	if not deck_input.keyboard_down(KEY_A): event_notices.suppress_a=false
+	if (deck_input.keyboard_down(KEY_A) and not event_notices.suppress_a) or deck_input.keyboard_down(KEY_LEFT): move.x -= 1
+	if deck_input.keyboard_down(KEY_D) or deck_input.keyboard_down(KEY_RIGHT): move.x += 1
+	var pad_move=deck_input.direction()
+	if pad_move!=Vector2i.ZERO: move=pad_move
 	if move != Vector2i.ZERO and move == last_move and panel == "": move_held += delta
 	else: move_held = 0.0
 	last_move = move
@@ -389,6 +376,7 @@ func _process(delta: float) -> void:
 		navigator.update(delta)
 	if panel == "" and move != Vector2i.ZERO and move_clock <= 0:
 		var stride = 8 if Input.is_physical_key_pressed(KEY_SHIFT) else (4 if last_pad and move_held > 0.65 else 1)
+		stride*=maxi(1,ceili(8.0/tile))
 		cursor += move * stride
 		move_clock = 0.085
 	explore_around(Vector2(cursor))
@@ -446,7 +434,7 @@ func grow_cities() -> void:
 
 func explore_around(at: Vector2) -> void:
 	if Vector2i(at)==NO_CELL: return
-	var added = explored.reveal(at,Vector2(660,420)/tile+Vector2.ONE*World.CHUNK)
+	var added = explored.reveal(at,Vector2(660,420)/minf(tile,zoom_target)+Vector2.ONE*World.CHUNK)
 	if added.is_empty(): return
 	if terrain.flat_override<0:
 		var before = cities.size()
@@ -697,7 +685,7 @@ func load_game() -> bool:
 	rng.state = data.rng
 	growth_clock = data.get("growth_clock", 0.0)
 	demand_clock = data.get("demand_clock", 0.0)
-	tile = clampf(data.get("tile", 32.0), 8, 96)
+	tile = clampf(data.get("tile",32.0),WorldSettings.MIN_ZOOM,WorldSettings.MAX_ZOOM)
 	zoom_target = tile
 	display_money = money
 	money_popups.clear()
@@ -734,12 +722,7 @@ func quit_game() -> void:
 	get_tree().quit()
 
 func title_move(direction: int) -> void:
-	if title_confirm_new:
-		title_confirm_accept = not title_confirm_accept
-		return
-	for i in 3:
-		title_index = posmod(title_index+direction,3)
-		if title_index != 1 or title_has_save: break
+	menu_focus.navigate(Vector2i(direction,0) if title_confirm_new else Vector2i(0,direction))
 
 func title_accept() -> void:
 	if title_confirm_new:
@@ -793,6 +776,7 @@ func start_new_session() -> void:
 
 func title_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
+		if last_pad or event.relative.length_squared()<1: return
 		last_pad = false
 		for hit in ui_hits:
 			if not hit.rect.has_point(event.position): continue
@@ -807,32 +791,18 @@ func title_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_RIGHT: title_confirm_new = false
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			for hit in ui_hits:
-				if hit.rect.has_point(event.position): title_action(hit.action); return
+				if hit.rect.has_point(event.position): menu_focus.pick(hit.action); title_action(hit.action); return
 	if event is InputEventKey and event.pressed and not event.echo:
 		last_pad = false
 		var key = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 		match key:
 			KEY_UP,KEY_W,KEY_LEFT,KEY_A: title_move(-1)
 			KEY_DOWN,KEY_S,KEY_RIGHT,KEY_D,KEY_TAB: title_move(1)
-			KEY_ENTER,KEY_KP_ENTER,KEY_SPACE: title_accept()
-			KEY_ESCAPE: title_confirm_new = false
+			KEY_ENTER,KEY_KP_ENTER,KEY_SPACE: menu_focus.activate()
+			KEY_ESCAPE,KEY_B: title_confirm_new = false
 			KEY_X: if not title_confirm_new: gameplay_ui.cycle_mode()
 			KEY_F9:
 				if not title_confirm_new and title_has_save: title_index = 1; title_accept()
-	if event is InputEventJoypadButton and event.pressed:
-		last_pad = true
-		match event.button_index:
-			JOY_BUTTON_DPAD_UP,JOY_BUTTON_DPAD_LEFT: title_move(-1)
-			JOY_BUTTON_DPAD_DOWN,JOY_BUTTON_DPAD_RIGHT: title_move(1)
-			JOY_BUTTON_X: if not title_confirm_new: gameplay_ui.cycle_mode()
-			JOY_BUTTON_A: title_accept()
-			JOY_BUTTON_B,JOY_BUTTON_BACK: title_confirm_new = false
-		ui_move_clock = 0.2
-	if event is InputEventJoypadMotion and absf(event.axis_value)>0.6:
-		last_pad = true
-		if event.axis == (JOY_AXIS_LEFT_X if title_confirm_new else JOY_AXIS_LEFT_Y) and ui_move_clock<=0:
-			title_move(int(sign(event.axis_value)))
-			ui_move_clock = 0.2
 
 func title_action(action: String) -> void:
 	if action=="play:mode": gameplay_ui.cycle_mode(); return
@@ -843,13 +813,18 @@ func title_action(action: String) -> void:
 		"title_confirm": start_new_session()
 		"title_cancel": title_confirm_new = false
 
+func _input(event: InputEvent) -> void:
+	if deck_input!=null and (deck_input.duplicate_alias(event) or deck_input.handle(event)): get_viewport().set_input_as_handled()
+
 func _unhandled_input(event: InputEvent) -> void:
+	if deck_input.duplicate_alias(event) or deck_input.handle(event): return
 	if cheats!=null and cheats.is_open(): return
 	if at_title: title_input(event); return
 	if event_notices.handle_input(event):
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseMotion:
+		if last_pad or event.relative.length_squared()<1: return
 		last_pad = false
 		if panel == "map" and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			navigator.pan(-event.relative/navigator.RECT.size*navigator.view().size)
@@ -873,7 +848,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			for index in range(ui_hits.size()-1,-1,-1):
 				var hit = ui_hits[index]
-				if hit.rect.has_point(event.position): ui_action(hit.action); return
+				if hit.rect.has_point(event.position): menu_focus.pick(hit.action); ui_action(hit.action); return
 			if panel == "map" and navigator.RECT.has_point(event.position):
 				var point = navigator.to_world(event.position)
 				if inside(point):
@@ -887,47 +862,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				hover_cell = cursor
 				if event.ctrl_pressed: gameplay.select_car_at(cursor); gameplay_ui.tab=1; open_panel("network")
 				else: apply_action()
-	if event is InputEventJoypadMotion:
-		if absf(event.axis_value)>0.4: last_pad = true; hover_cell = NO_CELL
-		if event.axis in [JOY_AXIS_TRIGGER_LEFT,JOY_AXIS_TRIGGER_RIGHT]:
-			var pressed = event.axis_value>0.6
-			var was_down = trigger_left_down if event.axis == JOY_AXIS_TRIGGER_LEFT else trigger_right_down
-			if pressed and not was_down and panel in ["","map"]: zoom_control(1.18 if event.axis == JOY_AXIS_TRIGGER_RIGHT else 1.0/1.18)
-			if event.axis == JOY_AXIS_TRIGGER_LEFT: trigger_left_down = pressed
-			else: trigger_right_down = pressed
-		elif panel != "" and panel != "map" and event.axis in [JOY_AXIS_LEFT_X,JOY_AXIS_LEFT_Y] and absf(event.axis_value)>0.6 and ui_move_clock<=0:
-			if event.axis == JOY_AXIS_LEFT_X: panel_move(int(sign(event.axis_value)),0)
-			elif event.axis == JOY_AXIS_LEFT_Y: panel_move(0,int(sign(event.axis_value)))
-			ui_move_clock = 0.18
-	if event is InputEventJoypadButton and event.pressed:
-		last_pad = true
-		hover_cell = NO_CELL
-		if event.button_index==JOY_BUTTON_START: toggle_menu(); return
-		if event.button_index==JOY_BUTTON_BACK: toggle_map(); return
-		if event.button_index==JOY_BUTTON_B: cancel_or_back(); return
-		if event.button_index==JOY_BUTTON_LEFT_STICK: toggle_pause(); return
-		if event.button_index in [JOY_BUTTON_LEFT_SHOULDER,JOY_BUTTON_RIGHT_SHOULDER]:
-			var direction=-1 if event.button_index==JOY_BUTTON_LEFT_SHOULDER else 1
-			if panel=="": cycle_world_tool(direction)
-			else: panel_bumper(direction)
-			return
-		if panel != "":
-			match event.button_index:
-				JOY_BUTTON_A: panel_accept()
-				JOY_BUTTON_X: panel_secondary(false)
-				JOY_BUTTON_Y: panel_secondary(true)
-				JOY_BUTTON_DPAD_UP: panel_move(0,-1)
-				JOY_BUTTON_DPAD_DOWN: panel_move(0,1)
-				JOY_BUTTON_DPAD_LEFT: panel_move(-1,0)
-				JOY_BUTTON_DPAD_RIGHT: panel_move(1,0)
-			return
-		match event.button_index:
-			JOY_BUTTON_A: apply_action()
-			JOY_BUTTON_Y: open_road_selector()
-			JOY_BUTTON_X:
-				if TOOLS[tool].id == "build_road": horizontal = not horizontal
-				elif TOOLS[tool].id == "repair_route": upgrade_current()
-			JOY_BUTTON_RIGHT_STICK: focus_next_city()
 	if event is InputEventKey and event.pressed and not event.echo:
 		last_pad = false
 		hover_cell = NO_CELL
@@ -1017,6 +951,9 @@ func toggle_anchor() -> void:
 	anchor = cursor if anchor == NO_CELL else NO_CELL
 
 func ui_action(action: String) -> void:
+	if not menu_focus.available(action):
+		if action=="load": tell("Todavía no hay una partida guardada.")
+		return
 	if action.begins_with("toolbar:"): visuals.toolbar.action(action); return
 	if action.begins_with("event:"): event_notices.action(action); return
 	if action.begins_with("play:"): gameplay_ui.action(action); return
@@ -1050,7 +987,8 @@ func ui_action(action: String) -> void:
 			"close": back_panel()
 			"speed": cycle_speed()
 			"save": save_game()
-			"load": load_game(); close_panels()
+			"load":
+				if load_game(): close_panels()
 			"new": new_game()
 			"catalog": open_road_selector()
 			"map_go": travel_to(navigator.target)
@@ -1087,6 +1025,7 @@ func open_menu() -> void:
 	panel = "menu"
 	panel_history.clear()
 	menu_index = 0
+	menu_focus.sync("cities")
 
 func open_panel(name: String) -> void:
 	if panel == name: return
@@ -1102,10 +1041,12 @@ func open_panel(name: String) -> void:
 	if name=="network":
 		services.select_segment(cursor)
 		gameplay.diagnose()
+	menu_focus.sync()
 
 func back_panel() -> void:
 	if not panel_history.is_empty(): panel = panel_history.pop_back()
 	else: close_panels()
+	menu_focus.sync()
 
 func close_panels() -> void:
 	panel = ""
@@ -1113,7 +1054,10 @@ func close_panels() -> void:
 	if TOOLS[tool].id == "menu": tool = clampi(last_world_tool,0,TOOLS.size()-2)
 
 func cancel_or_back() -> void:
-	if panel != "": back_panel()
+	if panel=="scenarios" and not gameplay_ui.pending_scenario.is_empty():
+		gameplay_ui.pending_scenario=""
+		menu_focus.sync()
+	elif panel != "": back_panel()
 	elif anchor != NO_CELL: anchor = NO_CELL
 	elif construction_mode!="road": construction_mode="road"
 
@@ -1126,32 +1070,16 @@ func zoom_control(factor: float) -> void:
 	else: set_zoom(zoom_target*factor)
 
 func panel_move(x: int, y: int) -> void:
-	if panel in ["objectives","network","scenarios"]: gameplay_ui.move_focus(x+y); return
-	match panel:
-		"menu": menu_index = posmod(menu_index+x+y*2,MENU_ACTIONS.size())
-		"catalog": kind = posmod(kind+y+x*12,Catalog.ROADS.size())
-		"cities": move_city_list(y+x*6)
-		"accounts":
-			if x != 0: account_filter = posmod(account_filter+x,3); account_scroll = 0
-			else: account_scroll = maxi(0,account_scroll+y)
-		"infrastructure": special_move(y if y != 0 else x)
-		"signal":
-			if x != 0: adjust_signal(x)
-			else: special_move(y)
+	menu_focus.navigate(Vector2i(x,y))
 
 func panel_accept() -> void:
-	if panel in ["objectives","network","scenarios"]: gameplay_ui.accept(); return
-	match panel:
-		"menu": ui_action(MENU_ACTIONS[menu_index])
-		"catalog": ui_action("kind:"+str(kind))
-		"cities": travel_city(city_list_index)
-		"map": travel_to(navigator.target)
-		"infrastructure","signal": special_accept()
+	if panel=="map": travel_to(navigator.target)
+	else: menu_focus.activate()
 
 func panel_secondary(y_button: bool) -> void:
 	match panel:
 		"menu":
-			if y_button: load_game(); close_panels()
+			if y_button: open_panel("help")
 			else: save_game()
 		"cities": move_city_list(6 if y_button else -6)
 		"map":
@@ -1192,7 +1120,7 @@ func _draw() -> void:
 	if visuals != null: visuals.draw()
 
 func set_zoom(value: float) -> void:
-	zoom_target = clampf(value, 8.0, 96.0)
+	zoom_target = clampf(value,WorldSettings.MIN_ZOOM,WorldSettings.MAX_ZOOM)
 
 func emit_income(amount: float, destination: int) -> void:
 	income_pulse = 1.0

@@ -49,13 +49,16 @@ func run() -> void:
 	var button=InputEventJoypadButton.new()
 	button.pressed=true;button.button_index=JOY_BUTTON_A
 	while not game.event_notices.pending.is_empty(): game.event_notices.respond(game.event_notices.pending[0].id,false)
-	game.menu_index=game.MENU_ACTIONS.find("cheats")
+	game.menu_focus.pick("cheats")
 	game._unhandled_input(button)
+	button.pressed=false;console._input(button);button.pressed=true
 	assert(console.is_open())
 	console.selection=0
 	button.button_index=JOY_BUTTON_DPAD_DOWN;console._input(button)
+	button.pressed=false;console._input(button);button.pressed=true
 	assert(console.selection==2)
 	button.button_index=JOY_BUTTON_A;console._input(button)
+	button.pressed=false;console._input(button);button.pressed=true
 	assert(game.incidents.snow.has(cursor))
 	button.button_index=JOY_BUTTON_B;console._input(button)
 	assert(not console.is_open() and game.panel=="menu")

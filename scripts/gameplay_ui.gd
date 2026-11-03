@@ -94,8 +94,8 @@ func draw_panel(visuals) -> void:
 		"objectives": draw_objectives()
 		"network": draw_network()
 		"scenarios": draw_scenarios()
-	focus_index=clampi(focus_index,0,maxi(0,actions.size()-1))
-	v.text(Vector2(160,683),"↑ ↓ / stick elegir · A / Enter activar · B / Esc volver · El tiempo sigue: Espacio pausa",13,v.MUTED)
+	focus_index=clampi(focus_index,-1,maxi(0,actions.size()-1))
+	v.text(Vector2(160,683),"↑ ↓ / stick elegir · A / Enter activar · B / Esc volver · L3 / Espacio pausa",13,v.MUTED)
 
 func draw_objectives() -> void:
 	var gp = g.gameplay

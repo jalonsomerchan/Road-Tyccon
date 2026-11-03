@@ -3,6 +3,7 @@ extends RefCounted
 var g
 var canvas
 var toolbar
+var overview
 var terrain_cache
 var scenery_atlas: Texture2D
 var scenery_atlas_size = Vector2.ONE
@@ -67,6 +68,7 @@ func _init(game) -> void:
 			environment[name].append(load(path) if ResourceLoader.exists(path) else null)
 
 	toolbar=preload("res://scripts/toolbar.gd").new(g,self)
+	overview=preload("res://scripts/region_overview.gd").new(g)
 
 func batch_scenery_atlas() -> void:
 	# Una textura compartida permite a Godot agrupar miles de sprites sin cambiar de textura.
@@ -112,9 +114,11 @@ func card(area: Rect2, color: Color = INK) -> void:
 	rect(Rect2(area.position, Vector2(area.size.x, 1)), Color("47605a"))
 
 func button(area: Rect2, value: String, action: String, active: bool = false) -> void:
-	rect(area, GREEN if active else Color("263d38"))
-	text(area.position + Vector2(12, area.size.y / 2 + 6), value, 16, INK if active else PAPER)
-	g.ui_hits.append({"rect":area, "action":action})
+	var enabled=g.menu_focus.available(action)
+	rect(area,(GREEN if active else Color("263d38")) if enabled else Color("1b302b"))
+	text(area.position+Vector2(12,area.size.y/2+6),value,16,(INK if active else PAPER) if enabled else MUTED)
+	g.ui_hits.append({"rect":area,"action":action})
+	if enabled and g.menu_focus.focused(action,area): canvas.draw_rect(area.grow(3),Color("8de1f2"),false,2)
 
 func sprite(family: String, index: int, area: Rect2, rotation: float = 0.0, tint: Color = Color.WHITE) -> void:
 	var texture = sheets[family][index]
@@ -128,28 +132,35 @@ func sprite(family: String, index: int, area: Rect2, rotation: float = 0.0, tint
 
 func draw() -> void:
 	g.ui_hits.clear()
+	g.menu_focus.sync()
 	if g.at_title:
 		tooltip_rect = Rect2()
 		draw_title()
 		return
 	if terrain_cache == null: terrain_cache = preload("res://scripts/terrain_render_cache.gd").new(g)
 	g.explore_around(g.camera)
-	terrain_cache.prepare()
-	draw_jobs()
-	draw_environment()
-	g.gameplay_ui.draw_world(self)
-	draw_cars()
-	draw_cities()
-	draw_city_accesses()
-	draw_selection()
-	draw_income()
+	if g.tile<overview.DETAIL_THRESHOLD:
+		terrain_cache.set_visible(false)
+		overview.draw(self)
+	else:
+		terrain_cache.set_visible(true)
+		terrain_cache.prepare()
+		draw_jobs()
+		draw_environment()
+		g.gameplay_ui.draw_world(self)
+		draw_cars()
+		draw_cities()
+		draw_city_accesses()
+		draw_selection()
+		draw_income()
 	draw_hud()
 	g.gameplay_ui.draw_hud(self)
-	if g.show_minimap: draw_minimap()
+	if g.show_minimap and g.tile>=overview.DETAIL_THRESHOLD: draw_minimap()
 	if g.panel != "":
 		tooltip_rect = Rect2()
 		draw_panel()
-	else: draw_tooltip()
+	elif g.tile>=overview.DETAIL_THRESHOLD: draw_tooltip()
+	else: tooltip_rect=Rect2()
 	g.event_notices.draw(self)
 
 func draw_title() -> void:
@@ -479,7 +490,7 @@ func draw_hud() -> void:
 	card(Rect2(1216,324,44,140))
 	button(Rect2(1218,326,40,40),"","zoom_in")
 	draw_tool_icon("zoom_in",Vector2(1238,346),PAPER,22)
-	text(Vector2(1220,395),str(int(g.zoom_target/32*100))+"%",12,MUTED)
+	text(Vector2(1220,395),("%.1f%%"%(g.zoom_target/32*100) if g.zoom_target<4 else str(int(g.zoom_target/32*100))+"%"),12,MUTED)
 	button(Rect2(1218,416,40,40),"","zoom_out")
 	draw_tool_icon("zoom_out",Vector2(1238,436),PAPER,22)
 	if g.notice_time > 0:
@@ -549,10 +560,10 @@ func draw_panel() -> void:
 				text(area.position+Vector2(18,35),g.MENU_LABELS[i],23,color)
 				text(area.position+Vector2(18,66),descriptions[i],14,color)
 			button(Rect2(166,592,180,40),"Guardar · X","save")
-			button(Rect2(360,592,180,40),"Cargar · Y","load")
-			button(Rect2(554,592,180,40),"Ayuda · H","help")
-			button(Rect2(748,592,180,40),"Trucos · F8","cheats")
-			text(Vector2(166,675),"Cruceta / stick elegir · A abrir · B volver · ☰ cerrar menú · L3 pausa",14,MUTED)
+			button(Rect2(360,592,180,40),"Cargar","load")
+			button(Rect2(554,592,180,40),"Ayuda · Y" if g.last_pad else "Ayuda · H","help")
+			button(Rect2(748,592,180,40),"Velocidad · "+str(g.SPEEDS[g.speed_index])+"×","speed")
+			text(Vector2(166,675),"Cruceta / stick elegir · A activar · X guardar · Y ayuda · B volver · ☰ cerrar · L3 pausa",14,MUTED)
 		"objectives","network","scenarios": g.gameplay_ui.draw_panel(self)
 		"catalog": draw_catalog()
 		"cities": draw_city_list()
@@ -674,7 +685,7 @@ func draw_accounts() -> void:
 	if entries.is_empty(): text(Vector2(560,345),"Aún no hay movimientos.",16,MUTED)
 	button(Rect2(548,602,172,36),"↑ Anteriores","account_prev")
 	button(Rect2(732,602,172,36),"↓ Siguientes","account_next")
-	text(Vector2(164,675),"Totales de toda la partida · Hasta 1.000 movimientos recientes · ↑ ↓ desplazar · B volver",13,MUTED)
+	text(Vector2(164,675),"Cruceta / stick elegir · A filtrar / desplazar · LB/RB filtros · B volver",13,MUTED)
 
 func draw_catalog() -> void:
 	for i in 3:
@@ -722,7 +733,7 @@ func draw_help() -> void:
 		"A / Enter fija el inicio. Mueve el cursor y confirma el tramo con A / Enter.",
 		"Las obras tienen franjas ámbar. Los cierres, barreras rojas y una cruz.",
 		"Cierra antes de reparar o mejorar. Después de las obras, vuelve a abrir.",
-		"Une las ciudades por sus accesos señalados. No se conectan por los otros bordes.",
+		"Conecta las calles y los accesos señalados de las ciudades.",
 		"Los coches viajan y pagan al llegar: verás el ingreso junto a la ciudad.",
 		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las cinco herramientas.",
 		"Mayús mover rápido · Espacio / L3 pausa · F velocidad · G / R3 siguiente ciudad.",

@@ -4,6 +4,9 @@ func _initialize() -> void: call_deferred("run")
 func press(button: int) -> void:
 	var event=InputEventJoypadButton.new();event.button_index=button;event.pressed=true
 	g._unhandled_input(event)
+	if event is InputEventJoypadButton:
+		event.pressed=false
+		g._unhandled_input(event)
 func key(code: int) -> void:
 	var event=InputEventKey.new();event.physical_keycode=code;event.pressed=true
 	g._unhandled_input(event)
@@ -34,7 +37,7 @@ func run() -> void:
 	g.select_tool(2);press(JOY_BUTTON_START);assert(g.panel=="menu")
 	for button in [JOY_BUTTON_LEFT_SHOULDER,JOY_BUTTON_RIGHT_SHOULDER,JOY_BUTTON_DPAD_DOWN,JOY_BUTTON_DPAD_UP]:
 		press(button);assert(g.panel=="menu")
-	g.menu_index=0;press(JOY_BUTTON_A);assert(g.panel=="cities")
+	g.menu_focus.pick("cities");press(JOY_BUTTON_A);assert(g.panel=="cities")
 	press(JOY_BUTTON_RIGHT_SHOULDER);assert(g.panel=="cities" and g.city_list_index==6)
 	press(JOY_BUTTON_B);assert(g.panel=="menu")
 	press(JOY_BUTTON_B);assert(g.panel=="" and g.tool==2)
@@ -56,9 +59,9 @@ func run() -> void:
 	assert(g.panel=="menu" and g.speed_index==0 and not g.cheats.is_open())
 	press(JOY_BUTTON_LEFT_STICK);assert(g.speed_index==3 and g.panel=="menu")
 	# The console remains reachable with A through an explicit menu selection.
-	g.menu_index=g.MENU_ACTIONS.find("cheats");press(JOY_BUTTON_A);assert(g.cheats.is_open())
+	g.menu_focus.pick("cheats");press(JOY_BUTTON_A);assert(g.cheats.is_open())
 	var back=InputEventJoypadButton.new();back.button_index=JOY_BUTTON_B;back.pressed=true
-	g.cheats._input(back);assert(not g.cheats.is_open() and g.panel=="menu")
+	g.cheats._input(back);back.pressed=false;g._unhandled_input(back);assert(not g.cheats.is_open() and g.panel=="menu")
 	press(JOY_BUTTON_B);assert(g.panel=="")
 	# Y consistently opens the catalog; bumpers stay within its columns.
 	for tool in range(5):

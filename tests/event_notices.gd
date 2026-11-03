@@ -9,6 +9,8 @@ func press(key: int, pad: bool = true, echo: bool = false) -> void:
 		event=InputEventKey.new();event.physical_keycode=key;event.echo=echo
 	event.pressed=true
 	g._unhandled_input(event)
+	if event is InputEventJoypadButton:
+		event.pressed=false;g._unhandled_input(event)
 
 func run() -> void:
 	g=load("res://scenes/main.tscn").instantiate();root.add_child(g);g.set_process(false)

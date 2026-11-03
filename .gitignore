@@ -26,3 +26,5 @@ tests/test_scores.bin
 tests/event_notices_save.bin
 
 tests/steam_deck_save.bin
+
+tests/menu_runtime_save.bin

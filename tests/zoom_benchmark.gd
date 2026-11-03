@@ -10,7 +10,7 @@ func run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	game.speed_index = 0
 	game.notice_time = 0
-	for zoom in [32,16,8]:
+	for zoom in [32,8,2,0.5]:
 		print("Measuring zoom ",zoom)
 		game.tile = zoom
 		game.zoom_target = zoom
@@ -32,6 +32,6 @@ func run() -> void:
 		for block in game.visuals.terrain_cache.blocks.values(): after_rebuilds += block.ground.rebuilds+block.props.rebuilds
 		print("Cache rebuilds during sample: ",after_rebuilds-before_rebuilds)
 		times.sort()
-		print("ZOOM %d: frame median %.2f ms p95 %.2f ms max %.2f ms; draw calls %d" % [zoom,times[22],times[42],times.back(),Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
+		print("ZOOM %.1f: frame median %.2f ms p95 %.2f ms max %.2f ms; draw calls %d" % [zoom,times[22],times[42],times.back(),Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
 	game.free()
 	quit()

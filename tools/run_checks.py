@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GODOT = sys.argv[1] if len(sys.argv) > 1 else '/Applications/Godot.app/Contents/MacOS/Godot'
 CASES = ['smoke', 'starting_cities', 'road_connections', 'presentation', 'visual_refresh',
          'expanding_world', 'cheats', 'urban_roads', 'city_layout', 'incidents',
-         'condition_assets', 'navigation_toolbar', 'title_screen', 'gameplay', 'event_notices', 'curves', 'steam_deck']
+         'condition_assets', 'navigation_toolbar', 'title_screen', 'gameplay', 'event_notices', 'curves', 'steam_deck', 'menu_runtime']
 
 def run(project, case, extra=()):
     args = [GODOT, '--headless', '--path', str(project), '--log-file',
@@ -43,6 +43,6 @@ with tempfile.TemporaryDirectory(prefix='entre-ciudades-checks-') as directory:
     settings = target / 'scripts/world_settings.gd'
     settings.write_text(re.sub(r'(?m)^const INITIAL_SIDE = [^\n]+', 'const INITIAL_SIDE = 2048', settings.read_text()))
     for case in CASES:
-        failures += not run(target, case, ['--title-screen'] if case == 'title_screen' else [])
+        failures += not run(target, case, ['--title-screen'] if case in ['title_screen','menu_runtime'] else [])
     print(f'{len(CASES)+1-failures}/{len(CASES)+1} checks passed', flush=True)
     sys.exit(1 if failures else 0)

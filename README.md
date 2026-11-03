@@ -128,7 +128,7 @@ La construcción normal siempre requiere **dos extremos distintos**: A / Enter f
 
 **Destruir** cuesta el 25 % del precio de construcción y tarda 5 segundos simulados. Cierra la vía al aceptar el trabajo; sus coches conservan destino y posición y esperan hasta que vuelva a existir una conexión desde esa casilla. La rotonda se demuele completa. **Talar** cuesta 20 € por casilla de bosque y tarda 3 segundos simulados. Ambos trabajos muestran progreso y se guardan aunque estén sin terminar. Los accesos siguen protegidos frente al abandono; una demolición explícita no reaparece al cargar.
 
-El menú tiene cuatro pantallas:
+El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Objetivos, Red y servicios, Escenarios y Trucos. Las cuatro pantallas de consulta son:
 
 - **Ciudades:** listado paginado con habitantes, viajes recibidos, accesos, colas, conexión actual y botón para ir al acceso principal. El estado actual no se confunde con los destinos históricos que siguen generando demanda.
 - **Mapa:** terreno de la región, carreteras, ciudades, cámara y destino seleccionable. Permite desplazarse a cualquier punto, ampliar, reducir y encuadrar el territorio conocido o el mapa entero. Muestrea terreno sin llenar la caché de bloques.
@@ -158,14 +158,19 @@ El menú tiene cuatro pantallas:
 | Mapa interactivo | M | View |
 | Mover mapa / ir al destino | WASD / flechas, Enter; clic selecciona, doble clic va; arrastre derecho desplaza | Stick / cruceta, A |
 | Encuadrar mapa conocido / entero | X / Y dentro del mapa | X / Y dentro del mapa |
-| Guardar / cargar | F5 / F9; X / Y en menú principal | X / Y en menú principal |
-| Ayuda | H; botón del menú | Botón del menú con ratón / pantalla táctil |
+| Guardar / cargar | F5 / F9; X guarda en el menú; Enter activa Cargar | X guarda; Cargar con selección y A |
+| Ayuda | H; botón del menú | Y en el menú principal; o seleccionar Ayuda y A |
 | Trucos | F8; opción del menú | Menú → Trucos; cruceta / stick y A |
 | Nueva región | N y repetir para confirmar | — |
 
-En la lista de ciudades, ↑ / ↓ elige, A / Enter va y X / Y cambia página. En Contabilidad, ↑ / ↓ desplaza y X / Y cambia el filtro. El menú no detiene el tiempo; usa pausa cuando lo necesites.
+En la lista de ciudades, ↑ / ↓ elige, A / Enter va y X / Y cambia página. En Contabilidad, la cruceta / stick elige filtros y botones de desplazamiento; A los activa y LB/RB o X/Y cambian el filtro. El menú no detiene el tiempo; usa pausa cuando lo necesites.
 
 ### Controles de Steam Deck
+
+La navegación de mando se procesa antes de la interfaz de Godot, por una sola vía. El foco azul marca el botón que ejecutará A, incluidos los controles inferiores de Guardar, Cargar, Ayuda y Velocidad. No depende de haber dibujado ya el menú. Se descartan también los Enter/Esc/clic duplicados que Steam Input pueda emitir junto a un botón de mando. El stick usa zona muerta y repetición con pausa inicial; mantener A no confirma una segunda pantalla y el movimiento pasivo del ratón no cambia la selección del mando. Las confirmaciones empiezan en Cancelar. En el menú principal, **X guarda** y **Y abre Ayuda**; cargar requiere seleccionar Cargar y pulsar A. En escenarios, B cancela primero la preparación del reto y después cierra la pantalla.
+
+El zoom de juego llega ahora a **0,5 píxeles por casilla**: permite ver **16 veces más anchura y 256 veces más superficie** que el mínimo anterior de 8 píxeles. Por debajo de ese mínimo anterior se usa una vista regional con terreno muestreado, carreteras y marcadores de ciudades, vehículos e incidentes. El número de muestras es fijo y no se generan mallas de millones de casillas. Al acercarse vuelve el detalle pixel art. El zoom se conserva al guardar y cargar, y el desplazamiento se adapta al alejamiento.
+
 
 **☰ (Menu/Start)** abre el menú principal y vuelve a cerrarlo. **View** abre/cierra el mapa. **B** vuelve a la pantalla anterior, cierra un cuadro, descarta un aviso o cancela el trazado o modo de construcción; en el mapa de juego, si no hay nada que cancelar, no hace nada. B nunca abre el menú desde el juego.
 

@@ -113,7 +113,9 @@ func open() -> void:
 	feedback.modulate=Color.WHITE
 	field.text=""
 	cover.show()
-	if g.last_pad: buttons[selection].grab_focus()
+	if g.last_pad:
+		selection=clampi(selection,0,buttons.size()-1)
+		buttons[selection].grab_focus()
 	else: field.grab_focus()
 
 func close() -> void:
@@ -123,6 +125,8 @@ func close() -> void:
 	g.queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if is_open() and g.deck_input.duplicate_alias(event):
+		get_viewport().set_input_as_handled();return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key=event.physical_keycode if event.physical_keycode!=0 else event.keycode
 		if key==KEY_F8 and not g.at_title:
@@ -134,34 +138,21 @@ func _input(event: InputEvent) -> void:
 		if is_open() and key==KEY_ESCAPE:
 			close();get_viewport().set_input_as_handled();return
 	if not is_open(): return
-	if event is InputEventJoypadButton and event.pressed:
-		g.last_pad=true
-		match event.button_index:
-			JOY_BUTTON_B,JOY_BUTTON_BACK: close()
-			JOY_BUTTON_A:
-				if close_button.has_focus(): close()
-				elif field.has_focus() and not field.text.strip_edges().is_empty(): submit(field.text)
-				else: select_code(selection)
-			JOY_BUTTON_DPAD_UP: move_selection(-2)
-			JOY_BUTTON_DPAD_DOWN: move_selection(2)
-			JOY_BUTTON_DPAD_LEFT: move_selection(-1)
-			JOY_BUTTON_DPAD_RIGHT: move_selection(1)
-			JOY_BUTTON_Y: field.grab_focus()
-		get_viewport().set_input_as_handled()
+	if g.deck_input.handle(event): get_viewport().set_input_as_handled()
 
-func _process(delta: float) -> void:
-	if not is_open(): return
-	stick_clock-=delta
-	if stick_clock>0 or Input.get_connected_joypads().is_empty(): return
-	var pad=Input.get_connected_joypads()[0]
-	var x=Input.get_joy_axis(pad,JOY_AXIS_LEFT_X)
-	var y=Input.get_joy_axis(pad,JOY_AXIS_LEFT_Y)
-	if absf(y)>.6: move_selection(2*int(sign(y)));stick_clock=.2
-	elif absf(x)>.6: move_selection(int(sign(x)));stick_clock=.2
+func pad_button(button: int) -> void:
+	match button:
+		JOY_BUTTON_B,JOY_BUTTON_START: close()
+		JOY_BUTTON_A:
+			if close_button.has_focus(): close()
+			elif field.has_focus() and not field.text.strip_edges().is_empty(): submit(field.text)
+			else: select_code(selection)
+		JOY_BUTTON_Y: field.grab_focus()
 
 func move_selection(amount: int) -> void:
-	selection=posmod(selection+amount,buttons.size())
-	buttons[selection].grab_focus()
+	selection=clampi(selection+amount,0,buttons.size())
+	if selection==buttons.size(): close_button.grab_focus()
+	else: buttons[selection].grab_focus()
 
 func select_code(index: int) -> void:
 	selection=index

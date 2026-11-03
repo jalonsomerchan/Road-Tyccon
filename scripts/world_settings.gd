@@ -49,6 +49,10 @@ const CITY_MAX_TRIP_GROWTH = 180 # Tope del crecimiento extra por actualización
 const CITY_SHRINK_WITHOUT_TRIPS = 55 # Habitantes perdidos si no hubo viajes.
 const CITY_SHRINK_GRACE = 180.0 # Tiempo inicial sin penalización por falta de viajes.
 
+# CÁMARA: píxeles por casilla. 0,5 permite 16× más amplitud que el mínimo anterior.
+const MIN_ZOOM = 0.5
+const MAX_ZOOM = 96.0
+
 # TRÁFICO E INGRESOS
 const STARTING_MONEY = 80000.0
 const DEMAND_INTERVAL = 6.0 # Más alto → menos viajes nuevos.
@@ -111,6 +115,7 @@ static func incident_rules() -> Dictionary:
 		"fire_spread":FIRE_SPREAD_INTERVAL,"unused_start":UNUSED_ROAD_DELAY,"unused_fade":UNUSED_ROAD_FADE_TIME}
 
 static func validate() -> void:
+	assert(MIN_ZOOM>0 and MIN_ZOOM<=MAX_ZOOM,"Revisa los límites del zoom")
 	assert(INITIAL_SIDE>=1024 and INITIAL_SIDE%1024==0,"INITIAL_SIDE: múltiplo de 1024 y al menos 1024")
 	assert(INITIAL_CITY_COUNT>=2 and MIN_CITY_DISTANCE>0 and START_CITY_DISTANCE>=MIN_CITY_DISTANCE,"Revisa cantidad y separación de ciudades")
 	assert(EXPLORATION_CITY_GRID>0 and EXPLORATION_CITY_JITTER>=0 and EXPLORATION_CITY_ATTEMPTS>0,"Revisa parámetros EXPLORATION_CITY_…")

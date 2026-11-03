@@ -107,3 +107,8 @@ func prepare() -> void:
 		blocks[oldest].props.free()
 		blocks.erase(oldest)
 	road_layer.queue_redraw()
+
+func set_visible(value: bool) -> void:
+	ground_root.visible=value
+	props_root.visible=value
+	road_layer.visible=value
