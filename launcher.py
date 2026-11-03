@@ -14,7 +14,7 @@ from pathlib import Path
 # CAMBIAR POR TU USUARIO Y REPOSITORIO
 REPO = "jalonsomerchan/Road-Tyccon"
 
-BASE = Path.home() / "Games" / "MiJuego"
+BASE = Path.home() / "Games" / "RoadTyccon"
 GAME = BASE / "juego"
 OLD = BASE / "juego-anterior"
 VERSION = BASE / "version.txt"
