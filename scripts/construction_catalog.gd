@@ -1,6 +1,6 @@
 extends RefCounted
 ## Un solo modelo para las tarjetas, el foco de mando, la paginación y la ficha técnica.
-const TABS = ["Disponibles","Caminos","Carreteras","Ciudad","Puentes","Tráfico"]
+const TABS = ["Disponibles","Caminos","Carreteras","Ciudad","Puentes","Tráfico","Señales"]
 const GROUPS = [[],[0,1,2,16,17,18],[3,4,5,6,7,8,9,21,22,23],[19,20],[10,11,12,13,14,15],[]]
 const PAGE_SIZE = 6
 var g
@@ -15,10 +15,13 @@ func road_id(id: String) -> int: return int(id.get_slice(":",1))
 func allowed(id: String) -> bool: return not id.begins_with("road:") or g.gameplay.unlocked(road_id(id))
 func selected_action() -> String: return "catalog:item:"+selected
 func card_rect(index: int) -> Rect2: return Rect2(156+index%2*316,240+int(index/2)*114,304,100)
-func tab_rect(index: int) -> Rect2: return Rect2(156+index*162,154,152,42)
+func tab_rect(index: int) -> Rect2: return Rect2(156+index*140,154,132,42)
 
 func entries() -> Array:
 	var result:Array=[]
+	if tab==6:
+		for id in g.RoadSigns.entries(): result.append("sign:"+id)
+		return result
 	if tab==0 or tab==5: result=["signal","roundabout"]
 	if tab==5: return result
 	var kinds:Array=range(g.Catalog.ROADS.size()) if tab==0 else GROUPS[tab].duplicate()
@@ -38,7 +41,7 @@ func visible_entries() -> Array:
 func open() -> void:
 	base_kind=g.kind if not g.Catalog.ROADS[g.kind].get("bridge",false) and g.gameplay.unlocked(g.kind) else 0
 	selected="road:"+str(g.kind) if g.construction_mode=="road" else g.construction_mode
-	tab=5 if selected in ["signal","roundabout"] else 0
+	tab=6 if selected.begins_with("sign:") else (5 if selected in ["signal","roundabout"] else 0)
 	page=0
 	var index=entries().find(selected)
 	if index>=0: page=int(index/PAGE_SIZE)
@@ -91,7 +94,10 @@ func confirm(id: String = "") -> void:
 		g.construction_mode=selected
 		if selected=="roundabout": g.kind=base_kind
 	g.select_tool(0)
-	g.tell("Semáforo seleccionado · A sobre una carretera para colocarlo" if selected=="signal" else ("Rotonda seleccionada · A para colocar · 3 × 3 casillas" if selected=="roundabout" else "Vía seleccionada · A fija el inicio del tramo"))
+	if selected.begins_with("sign:"):
+		g.tell(name(selected)+" · Elige el sentido con R / X y coloca con Enter / A")
+		return
+	g.tell("Semáforo · A para colocar; controla ambos ejes y no necesita girarse" if selected=="signal" else ("Rotonda seleccionada · A para colocar · 3 × 3 casillas" if selected=="roundabout" else "Vía seleccionada · A fija el inicio del tramo"))
 
 func action(value: String) -> void:
 	var command=value.get_slice(":",1)
@@ -116,11 +122,13 @@ func lines(v, text: String, at: Vector2, width: float, size: int, color: Color, 
 	if row<maximum: v.text(at+Vector2(0,row*(size+4)),line,size,color)
 
 func name(id: String) -> String:
+	if id.begins_with("sign:"): return g.RoadSigns.definition(id.trim_prefix("sign:")).name
 	return g.Catalog.ROADS[road_id(id)].name if id.begins_with("road:") else ("Rotonda" if id=="roundabout" else "Semáforo")
 
 func picture(v, id: String, area: Rect2) -> void:
 	v.toolbar.box(area,Color("102a25"),Color("38574b"),8)
 	if id.begins_with("road:"): v.sprite("roads",road_id(id),area.grow(-5))
+	elif id.begins_with("sign:"): v.sign_icon(id.trim_prefix("sign:"),area.get_center(),area.size.x*.66)
 	elif id=="roundabout":
 		var texture=v.road_conditions[base_kind].roundabout
 		if texture!=null: v.canvas.draw_texture_rect(texture,area.grow(-5),false)
@@ -148,14 +156,20 @@ func draw(v) -> void:
 		v.toolbar.box(area,Color("2d493b") if chosen else Color("203932"),v.GREEN if chosen else Color("38574b"),8)
 		picture(v,id,Rect2(area.position+Vector2(10,12),Vector2(62,62)))
 		lines(v,name(id),area.position+Vector2(84,26),208,16,v.PAPER if enabled else v.MUTED)
-		var caption="Gratis · Control del cruce" if id=="signal" else (g.cash(g.Catalog.ROADS[base_kind].cost*9)+" · 3 × 3 casillas" if id=="roundabout" else str(int(g.Catalog.ROADS[road_id(id)].speed*15))+" km/h · "+g.cash(g.Catalog.ROADS[road_id(id)].cost)+"/cas.")
+		var caption = ""
+		if id.begins_with("sign:"): caption = g.RoadSigns.definition(id.trim_prefix("sign:")).family+" · Gratis"
+		elif id=="signal": caption = "Gratis · Control del cruce"
+		elif id=="roundabout": caption = g.cash(g.Catalog.ROADS[base_kind].cost*9)+" · 3 × 3 casillas"
+		else:
+			var road = g.Catalog.ROADS[road_id(id)]
+			caption = "%d km/h · %s/cas."%[int(road.speed*15),g.cash(road.cost)]
 		v.text(area.position+Vector2(84,79),caption if enabled else "BLOQUEADA · Nivel %d"%g.gameplay.road_tier(road_id(id)),12,v.GREEN if enabled else Color("d3a56e"))
 		g.ui_hits.append({"rect":area,"action":action_id})
 		if g.menu_focus.focused(action_id,area): v.canvas.draw_rect(area.grow(3),Color("8de1f2"),false,2)
 	if tab==5:
 		v.toolbar.box(Rect2(156,366,620,202),Color("142c26"),Color("38574b"),8)
 		v.text(Vector2(178,396),"DEL CATÁLOGO AL MAPA",12,v.GREEN)
-		var steps=["1. Pulsa A para elegir el semáforo.","2. Sitúate sobre una carretera y pulsa A para instalarlo.","3. Pulsa A sobre él para configurar tiempos y encendido."] if selected=="signal" else ["1. Cambia el material con X; confirma la rotonda con A.","2. Busca una zona libre de 3 × 3 casillas y pulsa A.","3. Conecta sus accesos a tus carreteras al terminar la obra."]
+		var steps=["1. Pulsa A para elegir el semáforo.","2. Sitúate sobre una carretera y pulsa A para instalarlo.","3. Regula ambos ejes; A permite configurar sus tiempos."] if selected=="signal" else ["1. Cambia el material con X; confirma la rotonda con A.","2. Busca una zona libre de 3 × 3 casillas y pulsa A.","3. Conecta sus accesos a tus carreteras al terminar la obra."]
 		for i in steps.size(): v.text(Vector2(178,436+i*39),steps[i],15,v.PAPER)
 	v.button(Rect2(156,590,142,42),"‹ Anterior","catalog:prev")
 	v.text(Vector2(358,617),"%d / %d"%[page+1,maxi(1,int(ceil(all.size()/float(PAGE_SIZE))))],16,v.MUTED)
@@ -178,7 +192,7 @@ func draw_details(v) -> void:
 	var cost=""
 	if road:
 		var kind=road_id(selected)
-		description="Cruza ríos y lagos. Se puede prolongar como cualquier vía." if spec.get("bridge",false) else ("Para viajes largos y tráfico abundante." if spec.lanes>=4 else ("Acceso económico a poblaciones y zonas rurales." if kind in GROUPS[1] else "Conecta ciudades y distribuye el tráfico de tu red."))
+		description="Tramo recto sobre agua o carreteras. Conecta por sus extremos." if spec.get("bridge",false) else ("Para viajes largos y tráfico abundante." if spec.lanes>=4 else ("Acceso económico a poblaciones y zonas rurales." if kind in GROUPS[1] else "Conecta ciudades y distribuye el tráfico de tu red."))
 		cost=g.cash(spec.cost)+" / casilla"
 		metric(v,Vector2(812,410),"VELOCIDAD",str(int(spec.speed*15))+" km/h")
 		metric(v,Vector2(968,410),"CAPACIDAD",str(spec.cap)+" coches/cas.")
@@ -194,8 +208,16 @@ func draw_details(v) -> void:
 		metric(v,Vector2(812,470),"OBRA",str(spec.time)+" s")
 		metric(v,Vector2(968,470),"COSTE TOTAL",g.cash(spec.cost*9))
 		v.button(Rect2(812,532,296,40),"X · "+v.toolbar.fit(spec.name,242,14),"catalog:base")
+	elif selected.begins_with("sign:"):
+		var sign = g.RoadSigns.definition(selected.trim_prefix("sign:"))
+		description=sign.get("description","Señal visual de "+sign.family.to_lower()+". Identifica este punto de la red.")
+		cost="Gratis"
+		metric(v,Vector2(812,410),"TIPO",sign.family)
+		metric(v,Vector2(968,410),"SENTIDO",g.RoadSigns.HEADINGS[g.signage.heading])
+		v.text(Vector2(812,500),"R / X gira la señal antes de colocarla.",13,v.PAPER)
+		v.text(Vector2(812,529),"Enter / A coloca o retira la señal elegida.",13,v.PAPER)
 	else:
-		description="Colócalo sobre una carretera. Regula el cruce y evita la parada extra para ceder el paso mientras está activo."
+		description="Colócalo sobre una carretera. Regula el cruce y evita colisiones entre los sentidos mientras está activo."
 		cost="Instalación gratuita"
 		metric(v,Vector2(812,410),"OCUPACIÓN","1 casilla")
 		metric(v,Vector2(968,410),"DIRECCIONES","N/S · E/O")

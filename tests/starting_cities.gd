@@ -12,7 +12,13 @@ func run() -> void:
 		assert(b.pos-a.pos==Vector2i(game.START_CITY_DISTANCE,0))
 		assert(game.cities.size()==game.INITIAL_CITY_COUNT)
 		assert(game.explored.bounds.size==Vector2i.ONE*game.WorldSettings.INITIAL_SIDE and game.explored.regions.size()==int(game.WorldSettings.INITIAL_SIDE/game.Extent.REGION)**2)
-		for city in game.cities: assert(game.explored.bounds.has_point(city.pos))
+		var columns: Dictionary = {}
+		var rows: Dictionary = {}
+		for city in game.cities:
+			assert(game.explored.bounds.has_point(city.pos))
+			columns[city.pos.x] = true
+			rows[city.pos.y] = true
+		assert(mini(columns.size(),rows.size())>game.cities.size()/2,"City centers must be spread across both axes")
 		for i in game.cities.size():
 			for j in range(i+1,game.cities.size()):
 				assert(Vector2(game.cities[i].pos).distance_to(Vector2(game.cities[j].pos))>=game.MIN_CITY_DISTANCE)

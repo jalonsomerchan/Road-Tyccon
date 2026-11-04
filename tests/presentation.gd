@@ -5,18 +5,25 @@ func run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.set_process(false)
-	var count = 0
+	var counts = {"terrain":5,"props":4,"trees":4,"mountains":3,"scrub":2,
+		"roads":24,"buildings":19,"vehicles":8,"city_streets":16}
 	for family in game.visuals.sheets:
-		for frame in game.visuals.sheets[family]:
-			assert(frame != null, "All generated sprites are loaded")
-			assert(frame.get_width() == 64 and frame.get_height() == 64)
+		var frames: Array = game.visuals.sheets[family]
+		var count = 0
+		for i in frames.size():
+			var frame = frames[i]
+			if frame == null: continue
+			var side = 32 if family in ["trees","scrub"] or (family=="terrain" and i!=12) else 64
+			assert(frame.get_width()==side and frame.get_height()==side)
 			count += 1
+		assert(count==counts[family],"All active frames load: "+family)
+	assert(game.visuals.scenery_atlas.get_width()*game.visuals.scenery_atlas.get_height() <= 512*384)
 	var variants = 0
 	for road in game.visuals.road_variants:
 		for shape in road:
 			assert(road[shape] != null)
 			variants += 1
-	assert(count - 24 + variants == 160)
+	assert(variants == 96)
 	assert(game.panel == "", "Panels are hidden initially")
 	var key = InputEventKey.new()
 	key.pressed = true
@@ -74,6 +81,6 @@ func run() -> void:
 	game.ui_action("close")
 	game.ui_action("map")
 	assert(game.panel == "map")
-	print("PASS: 160 atlas/road sprite entries, including 96 road variants, compact interface, keyboard/keypad/PageUp/wheel/button/controller zoom, projection, income animation, effect cleanup, on-demand details")
+	print("PASS: packed scenery and 96 road variants, compact interface, keyboard/keypad/PageUp/wheel/button/controller zoom, projection, income animation, effect cleanup, on-demand details")
 	game.free()
 	quit()

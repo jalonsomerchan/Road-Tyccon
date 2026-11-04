@@ -6,7 +6,7 @@ const MAX_TILES = 192
 const BUDGET_USEC = 1200
 const ATLAS_SIDE = 512
 const COLUMNS = ATLAS_SIDE/SAMPLES
-const COLORS = [Color("869663"),Color("487f90"),Color("3e654c"),Color("a6ac99"),Color("8b8c76")]
+const COLORS = [Color("93964f"),Color("297584"),Color("566239"),Color("a6a088"),Color("a6a088")]
 var g
 var texture: ImageTexture
 var atlas_image: Image
@@ -19,6 +19,7 @@ var frame = 0
 var player_revision = -1
 var road_style: Array = []
 var road_lines: Dictionary = {}
+var deck_lines: Dictionary = {}
 var city_names: Dictionary = {}
 
 func _init(game) -> void: g=game
@@ -81,7 +82,7 @@ func update(budget: int = BUDGET_USEC) -> void:
 func prepare_roads() -> void:
 	var style: Array = [g.gameplay.overlay,int(g.elapsed*2) if g.gameplay.overlay!="none" else 0]
 	if player_revision==g.road_revision and road_style==style: return
-	player_revision=g.road_revision;road_style=style;road_lines.clear()
+	player_revision=g.road_revision;road_style=style;road_lines.clear();deck_lines.clear()
 	for p in g.roads:
 		if not g.gameplay.is_player_road(p): continue
 		var road=g.roads[p]
@@ -95,6 +96,15 @@ func prepare_roads() -> void:
 		if not road_lines.has(color): road_lines[color]=PackedVector2Array()
 		var axis=Vector2.RIGHT if road.axis else Vector2.DOWN
 		road_lines[color].append(Vector2(p)-axis*.5);road_lines[color].append(Vector2(p)+axis*.5)
+	for span in g.bridge_spans:
+		var a = Vector2i(span.x,span.y)
+		var b = Vector2i(span.z,span.w)
+		if not g.roads.has(a) or not g.roads.has(b): continue
+		var color = Color("dd9477") if g.bridge_spans[span]>0 or g.roads[a].closed or g.roads[b].closed or g.roads[a].work>0 or g.roads[b].work>0 else Color("c0ddd0")
+		if not deck_lines.has(color): deck_lines[color]=PackedVector2Array()
+		var half_cell = Vector2(b-a).normalized()*0.5
+		deck_lines[color].append(Vector2(a)+half_cell)
+		deck_lines[color].append(Vector2(b)-half_cell)
 
 func draw(v) -> void:
 	update()
@@ -109,6 +119,8 @@ func draw(v) -> void:
 	v.canvas.draw_set_transform(g.screen(Vector2.ZERO),0,Vector2.ONE*g.tile)
 	for color in road_lines:
 		v.canvas.draw_multiline(road_lines[color],color,maxf(1.0,1.0/g.tile))
+	for color in deck_lines:
+		v.canvas.draw_multiline(deck_lines[color],color,maxf(1.0,1.0/g.tile))
 	v.canvas.draw_set_transform(Vector2.ZERO)
 	var area=Rect2(8,92,1264,585)
 	for car in g.cars:

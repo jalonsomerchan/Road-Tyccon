@@ -21,7 +21,7 @@ Los multiplicadores se aplican a la demanda por población, conservando las frac
 
 **Red y servicios**, dentro del menú, tiene tres pestañas accesibles con ratón, flechas y mando:
 
-- **Tramos y mantenimiento:** elige desde el cursor hasta los cruces (hasta 2.048 casillas), repara el tramo o contrata mantenimiento automático por debajo del 35, 55 o 75 %. La reparación con cierre cuesta el porcentaje configurado y devuelve la vía a su estado de apertura anterior. La parcial cuesta ×1,5 y tarda el doble: mantiene el paso con capacidad al 50 % y velocidad al 55 %. Los trabajos y su progreso se guardan. Las vías municipales sin modificar quedan fuera del mantenimiento automático.
+- **Tramos y mantenimiento:** elige desde el cursor hasta los cruces (hasta 2.048 casillas), repara el tramo o contrata mantenimiento automático por debajo del 35, 55 o 75 %. La reparación con cierre cuesta el porcentaje configurado, espera a que salga todo el tráfico y abre el tramo al terminar. La parcial cuesta ×1,5 y tarda el doble: mantiene el paso con capacidad al 50 % y velocidad al 55 %. Los trabajos y su progreso se guardan. Las vías municipales sin modificar quedan fuera del mantenimiento automático.
 - **Tráfico y emergencias:** capas de congestión, conservación y rentabilidad estimada; diagnóstico con botón para ir al punto; selección de vehículos con ruta, destino y causa de parada. **C** o **Ctrl+clic** abre la inspección; **L** alterna capas. La previsión muestra el próximo fenómeno y su cuenta atrás. Bomberos (250 €) y quitanieves (180 €) despejan efectos en un radio de doce casillas alrededor del cursor; los bomberos eliminan también las fuentes de propagación extinguidas. Los eventos priorizan las vías del jugador.
 - **Economía:** conservación por minuto, ingresos recientes de viajes, caja prevista a cinco minutos y comparación paginada de conexiones. Las vías del jugador cuestan el **0,08 % de su precio de construcción por minuto simulado**; las calles municipales sin modificar no generan ese gasto. Una ruta muestra el coste completo de sus vías, por lo que sus márgenes sirven para comparar y no deben sumarse cuando comparten tramos. La capa de rentabilidad distribuye el ingreso de cada viaje por sus casillas recorridas. La previsión excluye contratos, devoluciones, nuevas obras, accidentes y reparaciones futuras.
 
@@ -64,7 +64,7 @@ Hay **24 tipos**: tierra, grava, cemento, carretera local, secundaria, principal
 
 Cada tipo tiene cuatro sprites propios: **recta, curva, cruce en T y cruce de cuatro brazos**. El juego los elige y gira según las conexiones. Son **96 sprites de vías**, regenerados con ImageGen y registrados para que rectas, curvas y cruces compartan exactamente los píxeles de sus conexiones. El juego utiliza `assets/sprites/roads-v5/`; las láminas originales, especificaciones de prompts y QC están en `assets/source/visual-refresh/`. Las generaciones anteriores se conservan como fuentes.
 
-Construir, reparar y mejorar lleva tiempo. Cierra antes de reparar o mejorar y vuelve a abrir después. Las obras se marcan en ámbar y los cierres con cruces, barreras y luces rojas. Los ríos requieren puentes; las montañas y los roquedos obligan a rodearlos. Los costes y tiempos iniciales se pueden ajustar en `scripts/catalog.gd`.
+Construir, reparar y mejorar lleva tiempo. Para reparar, selecciona los dos extremos: el tramo se cierra, espera a que salgan los coches, se repara y se abre automáticamente. Para mejorar, cierra antes la vía y vuelve a abrirla después. Las obras se marcan en ámbar y los cierres con cruces, barreras y luces rojas. Los ríos requieren puentes; las montañas y los roquedos obligan a rodearlos. Los costes y tiempos iniciales se pueden ajustar en `scripts/catalog.gd`.
 
 Las **curvas y los giros reducen la velocidad al 60 %** (un 40 % menos), ajustable mediante `CURVE_SPEED_FACTOR` en `scripts/world_settings.gd`. La penalización depende de la maniobra real: girar en un cruce ralentiza al coche, mientras que atravesarlo en línea recta mantiene su velocidad. El cálculo de rutas considera la dirección de llegada y ese tiempo extra, de modo que favorece los trazados más rectos cuando resultan más rápidos. La reducción se combina con el estado de la vía, los vehículos industriales y las obras parciales. La dirección se conserva al recalcular rutas y al guardar/cargar, y la inspección de vehículos indica cuándo están tomando una curva.
 
@@ -80,7 +80,7 @@ Los lagos se generan en cuencas elípticas de distintos tamaños, proporciones y
 
 Las ciudades tienen cuatro estilos visuales persistentes: villa mediterránea, ciudad jardín, centro urbano y barrio industrial. Una semilla propia varía edificios, orientaciones, jardines, densidad y trazado de calles; su identidad se mantiene al crecer y al cargar, incluidas las partidas antiguas. Hay siete edificios nuevos y un parque en `assets/sprites/city-v2/`, además de ocho coches cenitales en `assets/sprites/vehicles-v2/`. Se dibujan con el atlas y las mallas por bloques para conservar el rendimiento del zoom.
 
-Los edificios se generan junto a calles residenciales o avenidas urbanas, sin ocuparlas. Las parcelas que no tienen una vía adyacente conservan suelo libre y arbolado disperso; los parques con fuente son puntuales. El centro es una vía transitable y el edificio cívico ocupa una parcela contigua. Las calles son carreteras reales: usan los mismos sprites de recta, curva y cruce, capacidades, conservación, semáforos y cierres que el resto de la red. Los coches circulan por ellas dentro de la ciudad; edificios y parques no forman parte de las rutas.
+Los edificios se generan junto a calles residenciales o avenidas urbanas, sin ocuparlas. Las parcelas que no tienen una vía adyacente conservan suelo libre y arbolado disperso; los parques con fuente son puntuales. El centro es una vía transitable y el edificio cívico ocupa una parcela contigua. Las calles son carreteras reales: usan los mismos sprites de recta, curva y cruce, capacidades, semáforos y cierres que el resto de la red, pero su conservación permanece al 100 % y no se deterioran por tiempo, tráfico ni incendios. Los coches circulan por ellas dentro de la ciudad; edificios y parques no forman parte de las rutas.
 
 El plano parte de una sola calle principal y añade un cruce, un ramal o una pequeña manzana de servicio según su estilo, semilla y tamaño. Las calles paralelas tienen al menos dos parcelas entre ellas (`CITY_STREET_BLOCK_SPACING = 3`); no se permiten superficies de asfalto de 2 × 2. En planos nuevos de radio 2 o mayor, las calles ocupan como máximo el 40 % de la superficie urbana. Las avenidas se reservan a la calle principal. Cada ciudad genera de dos a cuatro salidas, cada una con una prolongación exterior gratuita de tres casillas. **Todas las carreteras que salen de la red urbana son conectores**, incluidas las salidas construidas por el jugador; ya no hay una lista limitada de lados autorizados. Los conectores se calculan a partir de las carreteras existentes y sus extremos se marcan con un círculo y una flecha. G / R3 lleva al acceso principal de la siguiente ciudad.
 
@@ -126,7 +126,7 @@ Los accesos llenos retienen la demanda dentro de la ciudad. El límite de 350 ve
 
 ## Barra, menú y controles
 
-La barra inferior agrupa **Construir**, **Cerrar / abrir**, **Reparar**, **Destruir** y **Talar** en el mismo orden que los controles 1–5 y LB/RB. Cada acción tiene un icono vectorial propio y una etiqueta debajo, con la selección destacada y una ayuda contextual al pasar el ratón. El selector central muestra el tipo de vía, su aspecto, los carriles y el precio por casilla. A su derecha hay accesos a **Rotonda**, **Semáforo**, **Mejorar**, **Deshacer** y **Menú**; mejorar y deshacer indican cuándo están disponibles. El botón de cierre cambia a **Abrir** al seleccionar una carretera cerrada. Los iconos de mapa, objetivos, servicios, pausa y zoom comparten el mismo estilo. El pie adapta sus indicaciones a teclado o mando. Iconos editables: `assets/ui/icons/`; presentación: `scripts/toolbar.gd`.
+La barra inferior agrupa **Construir**, **Cerrar / abrir**, **Reparar**, **Destruir**, **Talar**, **Eliminar**, **Deshacer**, **Mejorar**, **Menú** y **Servicios**. LB/RB recorre las herramientas, incluidas Mejorar y Servicios; pulsa A para ejecutar la acción seleccionada. Menú se abre también con ☰. El selector de construcción abre el catálogo, donde siguen disponibles rotondas, semáforos y señales. Eliminar quita señales y semáforos sin destruir la carretera.
 
 La construcción normal siempre requiere **dos extremos distintos**: A / Enter fija el inicio, mueve el cursor y vuelve a confirmar para construir el tramo. B / Esc cancela el inicio. X / R cambia el orden de los ejes del trazado. Puedes conservar el inicio mientras consultas el mapa o te desplazas a otra ciudad.
 
@@ -145,7 +145,7 @@ El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Obje
 | Desplazamiento rápido | Mantener Mayús | Mantener la dirección del stick |
 | Acción / fijar inicio / confirmar tramo | Enter / E / clic | A |
 | Orden de los ejes del tramo | R / X | X |
-| Herramienta anterior / siguiente | Q / Tab; 1–5 herramientas, 6 menú | LB / RB (L1 / R1); excluye Menú |
+| Herramienta anterior / siguiente | Q / Tab; 1–7 herramientas | LB / RB (L1 / R1); excluye Menú |
 | Selector del tipo de carretera | Y / V | Y con Construir seleccionado |
 | Elegir carretera en catálogo | Flechas, Enter | Cruceta / stick, A |
 | Carreteras, rotondas y semáforos | Pestañas y ficha del catálogo | Y → Disponibles / Tráfico → A |
@@ -153,9 +153,9 @@ El menú principal da acceso a Ciudades, Mapa, Estadísticas, Contabilidad, Obje
 | Siguiente acceso de ciudad | G | R3 |
 | Pausa / reanudar | Espacio | L3; recupera la velocidad anterior |
 | Velocidad pausa / 1× / 2× / 4× / 8× | F; botón superior | Botón de velocidad en pantalla |
-| Menú principal | 6 / F10; botón Menú | ☰ (Menu / Start) |
+| Menú principal | 8 / F10; botón Menú | ☰ (Menu / Start) |
 | Cancelar / volver / cerrar | B / Esc / clic derecho | B |
-| Reparar / mejorar al tipo elegido | Enter / U con vía cerrada | A / X con Arreglar seleccionado |
+| Reparar / mejorar al tipo elegido | Enter: elegir extremos / U: mejorar con vía cerrada | A / X con Arreglar seleccionado |
 | Rotonda / semáforo / carretera normal | O / T / P | Y → catálogo, elegir tarjeta y A |
 | Inspección de selección | I; bocadillo automático | Bocadillo automático |
 | Localizar nieve / incendio reciente | J | — |
@@ -184,9 +184,9 @@ El zoom de juego llega ahora a **0,5 píxeles por casilla**: permite ver **16 ve
 
 **☰ (Menu/Start)** abre el menú principal y vuelve a cerrarlo. **View** abre/cierra el mapa. **B** vuelve a la pantalla anterior, cierra un cuadro, descarta un aviso o cancela el trazado o modo de construcción; en el mapa de juego, si no hay nada que cancelar, no hace nada. B nunca abre el menú desde el juego.
 
-**L1/R1** recorren únicamente las cinco herramientas de construcción, cierre, reparación, demolición y tala. Dentro de un panel cambian de página, columna, filtro o pestaña, manteniéndolo abierto. **L3** pausa/reanuda y recupera la velocidad que había antes de pausar. **L2/R2** controlan el zoom; **R3** va a la siguiente ciudad. **A** confirma y **Y** abre el catálogo desde cualquier herramienta. **X** cambia el trazado; en el catálogo cambia el material de la rotonda o la página y, con Reparar, permite mejorar. La consola de trucos es una opción seleccionable del menú, con A para abrirla y B para cerrarla.
+**L1/R1** recorren las herramientas, incluidas Mejorar y Servicios; pulsa A para ejecutarlas. Dentro de un panel cambian de página, columna, filtro o pestaña, manteniéndolo abierto. **L3** pausa/reanuda y recupera la velocidad que había antes de pausar. **L2/R2** controlan el zoom; **R3** va a la siguiente ciudad. **A** confirma y **Y** abre el catálogo desde cualquier herramienta. **X** cambia el trazado y gira la orientación de la señal seleccionada antes de colocarla. Los semáforos regulan ambos ejes y no se giran. En el catálogo cambia el material de la rotonda o la página y, con Reparar, permite mejorar. La consola de trucos es una opción seleccionable del menú, con A para abrirla y B para cerrarla.
 
-En teclado, **6/F10** abre el menú; **B/Esc/clic derecho** solo cierran, vuelven o cancelan. **Q/Tab** recorren las cinco herramientas sin abrir el menú; Tab dentro de un panel recorre su selección.
+En teclado, **8/F10** abre el menú; **B/Esc/clic derecho** solo cierran, vuelven o cancelan. **Q/Tab** recorren las herramientas sin abrir el menú; Tab dentro de un panel recorre su selección.
 
 ## Trucos
 
@@ -209,7 +209,7 @@ El fuego corta el paso inmediatamente: los coches buscan un desvío o esperan si
 
 Las vías abiertas pierden 0,08 puntos de conservación por segundo, más 0,14 por cada coche que las utiliza. El desgaste ordinario conserva un mínimo del 5 %; el incendio puede consumir la carretera por completo. Estos valores también se aplican a partidas cargadas.
 
-En los cruces de tres o más brazos sin semáforo activo, cada coche para 0,7 segundos antes de entrar y cede el paso al tráfico que ya está cruzando. Las entradas se ordenan por llegada y mantienen un margen mínimo de 0,4 segundos, formando pequeñas colas. Con semáforo activo se obedecen sus luces sin esa parada adicional; al apagarlo se vuelve a ceder el paso. Las rotondas mantienen su circulación propia. Las rutas tienen en cuenta el tiempo de parada y los guardados conservan la espera acumulada.
+En los cruces sin semáforo activo ni señales de prioridad, los coches no se detienen automáticamente: si llegan desde direcciones perpendiculares al mismo tiempo pueden chocar, con una probabilidad que depende de la velocidad y del tiempo que coinciden. Los giros a la derecha que no se cruzan no producen colisiones. Los semáforos activos y las señales de prioridad regulan el paso; un STOP obliga a detenerse y un ceda el paso da prioridad al resto del tráfico. Los accidentes detienen a los vehículos y generan un coste. Las rotondas mantienen su circulación propia.
 
 ## Configurar el juego
 
@@ -220,7 +220,7 @@ const INITIAL_SIDE = 1024            # Casillas por lado; múltiplo de 1024.
 const INITIAL_CITY_COUNT = 400       # Ciudades al empezar.
 const MIN_CITY_DISTANCE = 100        # Separación mínima entre centros.
 const START_CITY_DISTANCE = 100      # Distancia de la pareja inicial.
-const EXPLORATION_CITY_GRID = 7      # Hasta 7 × 7 ciudades por región nueva.
+const EXPLORATION_CITY_COUNT = 49    # Hasta 49 ciudades por región nueva.
 ```
 
 Además puedes ajustar:

@@ -6,6 +6,8 @@ var auto_enabled = false
 var auto_threshold = 55.0
 var repair_mode = "partial"
 var service_jobs: Dictionary = {}
+var repair_groups: Dictionary = {}
+var next_repair_group = 0
 var auto_clock = 0.0
 var undo_data: Dictionary = {}
 var detour_armed = false
@@ -17,6 +19,8 @@ func _init(game) -> void:
 func reset() -> void:
 	selected.clear()
 	service_jobs.clear()
+	repair_groups.clear()
+	next_repair_group=0
 	undo_data.clear()
 	detours.clear()
 	auto_enabled=false
@@ -26,10 +30,7 @@ func reset() -> void:
 	detour_armed=false
 
 func neighbours(p: Vector2i) -> Array:
-	var result: Array = []
-	for direction in g.DIRS:
-		if g.roads.has(p+direction): result.append(p+direction)
-	return result
+	return g.road_neighbours(p)
 
 func select_segment(start: Vector2i) -> void:
 	selected.clear()
@@ -71,30 +72,48 @@ func quote(targets: Array, partial: bool) -> float:
 
 func repair(targets: Array, partial: bool, automatic: bool = false) -> bool:
 	var valid: Array = []
+	var damaged: Array = []
 	for p in targets:
-		if not g.roads.has(p) or g.maintenance.jobs.has(p) or g.incidents.fire.has(p): continue
-		var road = g.roads[p]
-		if road.hp<99.9 and road.work<=0 and not service_jobs.has(p): valid.append(p)
-	var cost = quote(valid,partial)
-	if valid.is_empty():
+		if not g.roads.has(p) or g.maintenance.jobs.has(p) or g.incidents.fire.has(p) or g.roads[p].work>0 or service_jobs.has(p):
+			if not automatic: g.tell("El tramo contiene obras, un incendio o una carretera no disponible.")
+			return false
+		if not p in valid: valid.append(p)
+		if g.roads[p].hp<99.9 and not p in damaged: damaged.append(p)
+	if damaged.is_empty():
 		if not automatic: g.tell("No hay casillas deterioradas disponibles en el tramo.")
 		return false
+	var cost = quote(damaged,partial)
 	if g.money<cost:
 		if not automatic: g.tell("Fondos insuficientes · "+g.cash(cost))
 		return false
 	g.gameplay.begin_review("Mantenimiento del tramo")
 	invalidate_undo(valid)
-	g.transact(-cost,"repairs","Mantenimiento %s · %d casillas"%["parcial" if partial else "con cierre",valid.size()])
-	for p in valid:
+	g.transact(-cost,"repairs","Mantenimiento %s · %d casillas"%["parcial" if partial else "con cierre",damaged.size()])
+	var group = -1
+	if not partial:
+		group=next_repair_group
+		next_repair_group+=1
+		repair_groups[group]={"cells":valid.duplicate(),"waiting":true}
+	for p in (damaged if partial else valid):
 		var road = g.roads[p]
-		var time = (g.WorldSettings.REPAIR_BASE_TIME+(100-road.hp)*g.WorldSettings.REPAIR_TIME_PER_DAMAGE)*(2.0 if partial else 1.0)
-		service_jobs[p]={"left":time,"total":time,"partial":partial,"closed_before":road.closed}
+		var time = (g.WorldSettings.REPAIR_BASE_TIME+(100-road.hp)*g.WorldSettings.REPAIR_TIME_PER_DAMAGE)*(2.0 if partial else 1.0) if p in damaged else 0.0
+		service_jobs[p]={"left":time,"total":time,"partial":partial,"closed_before":road.closed,"group":group}
 		if not partial: road.closed=true
 		road.last_used=g.elapsed
 		road.player_modified=true
 	g.graph_dirty=true
-	if not automatic: g.tell("Mantenimiento aceptado · "+g.cash(cost)+" · Reapertura automática")
+	if not automatic: g.tell("Tramo cerrado · Esperando a que salgan los coches · "+g.cash(cost) if not partial else "Mantenimiento parcial aceptado · "+g.cash(cost))
 	return true
+
+func evacuating(p: Vector2i) -> bool:
+	if not service_jobs.has(p): return false
+	var group = service_jobs[p].get("group",-1)
+	return repair_groups.has(group) and repair_groups[group].waiting
+
+func evacuation_move(p: Vector2i, q: Vector2i) -> bool:
+	if not evacuating(p): return false
+	if g.road_open(q): return true
+	return evacuating(q) and service_jobs[p].group==service_jobs[q].group
 
 func capacity_factor(p: Vector2i) -> float:
 	return 0.5 if service_jobs.has(p) and service_jobs[p].partial else 1.0
@@ -134,8 +153,12 @@ func deploy(kind: String, center: Vector2i) -> void:
 			for p in affected: zone.cells.erase(p)
 	g.tell("%s · %d casillas despejadas"%["Bomberos" if kind=="fire" else "Quitanieves",affected.size()])
 
-func record_build(targets: Array, before: Dictionary, cost: float, roundabout: Vector2i = Vector2i(2147483647,2147483647)) -> void:
-	undo_data={"cells":targets.duplicate(),"before":before,"cost":cost,"at":g.elapsed,"kind":g.kind,"roundabout":roundabout,"used":false}
+func record_build(targets: Array, before: Dictionary, cost: float, roundabout: Vector2i = Vector2i(2147483647,2147483647), spans: Array = []) -> void:
+	var supports: Dictionary = {}
+	for span in spans:
+		supports[Vector2i(span.x,span.y)]=true
+		supports[Vector2i(span.z,span.w)]=true
+	undo_data={"cells":targets.duplicate(),"before":before,"cost":cost,"at":g.elapsed,"kind":g.kind,"roundabout":roundabout,"used":false,"spans":spans,"supports":supports}
 	if detour_armed:
 		for p in targets:
 			if g.roads.has(p): g.roads[p].reserve=true
@@ -146,13 +169,15 @@ func record_build(targets: Array, before: Dictionary, cost: float, roundabout: V
 func invalidate_undo(targets: Array) -> void:
 	if undo_data.is_empty(): return
 	for p in targets:
-		if p in undo_data.cells: undo_data.clear(); return
+		if p in undo_data.cells or undo_data.get("supports",{}).has(p): undo_data.clear(); return
 
 func note_used(p: Vector2i) -> void:
-	if not undo_data.is_empty() and p in undo_data.cells: undo_data.used=true
+	if not undo_data.is_empty() and (p in undo_data.cells or undo_data.get("supports",{}).has(p)): undo_data.used=true
 
 func can_undo() -> bool:
 	if undo_data.is_empty() or undo_data.used or g.elapsed-undo_data.at>60: return false
+	for span in undo_data.get("spans",[]):
+		if not g.bridge_spans.has(span): return false
 	for p in undo_data.cells:
 		if p==undo_data.roundabout: continue
 		if not g.roads.has(p) or g.roads[p].kind!=undo_data.kind or g.density.get(p,0)>0: return false
@@ -163,6 +188,7 @@ func undo_build() -> void:
 	if not can_undo(): g.tell("Solo puedes deshacer durante 60 s y antes del primer uso."); return
 	var targets: Array = undo_data.cells.duplicate()
 	var center: Vector2i = undo_data.roundabout
+	for span in undo_data.get("spans",[]): g.bridge_spans.erase(span)
 	if g.incidents.roundabouts.has(center): g.incidents.erase_road(center,true)
 	for p in targets:
 		if undo_data.before.has(p):
@@ -180,10 +206,38 @@ func undo_build() -> void:
 
 func update(dt: float) -> void:
 	if dt<=0: return
+	for group in repair_groups.keys():
+		var state = repair_groups[group]
+		if state.waiting:
+			var occupied = false
+			for car in g.cars:
+				if g.traffic.position(car) in state.cells: occupied=true; break
+			if occupied: continue
+			state.waiting=false
+		var burning = false
+		for p in state.cells:
+			if g.incidents.fire.has(p): burning=true; break
+		if burning: continue
+		var done = true
+		for p in state.cells:
+			if not service_jobs.has(p): continue
+			var job = service_jobs[p]
+			job.left=maxf(0,job.left-dt)
+			if job.left>0: done=false
+		if not done: continue
+		for p in state.cells:
+			if g.roads.has(p):
+				g.roads[p].hp=100.0
+				g.roads[p].last_used=g.elapsed
+				g.roads[p].closed=false
+			service_jobs.erase(p)
+		repair_groups.erase(group)
+		g.graph_dirty=true
 	for p in service_jobs.keys():
+		var job = service_jobs[p]
+		if repair_groups.has(job.get("group",-1)): continue
 		if not g.roads.has(p): service_jobs.erase(p); continue
 		if g.incidents.fire.has(p): continue
-		var job = service_jobs[p]
 		job.left=maxf(0,job.left-dt)
 		if job.left>0: continue
 		g.roads[p].hp=100.0
@@ -217,9 +271,9 @@ func update(dt: float) -> void:
 		repair(targets,repair_mode=="partial",true)
 
 func snapshot() -> Dictionary:
-	return {"auto_enabled":auto_enabled,"auto_threshold":auto_threshold,"repair_mode":repair_mode,"service_jobs":service_jobs,"auto_clock":auto_clock,"detours":detours,"selected":selected}
+	return {"auto_enabled":auto_enabled,"auto_threshold":auto_threshold,"repair_mode":repair_mode,"service_jobs":service_jobs,"repair_groups":repair_groups,"next_repair_group":next_repair_group,"auto_clock":auto_clock,"detours":detours,"selected":selected}
 
 func restore(data: Dictionary) -> void:
 	reset()
-	for key in ["auto_enabled","auto_threshold","repair_mode","service_jobs","auto_clock","detours","selected"]:
+	for key in ["auto_enabled","auto_threshold","repair_mode","service_jobs","repair_groups","next_repair_group","auto_clock","detours","selected"]:
 		if data.has(key): set(key,data[key])

@@ -1,8 +1,8 @@
 extends RefCounted
 ## Iconografía vectorial compartida y barra de herramientas a escala de la interfaz.
-const ICONS = ["road","close","open","repair","demolish","tree","menu","roundabout","signal","upgrade","undo","catalog","map","play","pause","zoom_in","zoom_out","goals","network","chevron_down"]
+const ICONS = ["road","close","open","repair","demolish","tree","remove","menu","roundabout","signal","upgrade","undo","catalog","map","play","pause","zoom_in","zoom_out","goals","network","chevron_down"]
 const RECT = Rect2(48,690,1184,98)
-const ACCENTS = ["d3e69b","e6bd78","a7d9c0","eeab93","b4d3ad"]
+const ACCENTS = ["d3e69b","e6bd78","a7d9c0","eeab93","b4d3ad","efb7a2","a7d9c0","a7d9c0","d3e69b","b4d3ad"]
 var g
 var visuals_ref: WeakRef
 var v:
@@ -73,54 +73,63 @@ func hint() -> String:
 	match g.TOOLS[g.tool].id:
 		"build_road":
 			if g.construction_mode=="roundabout": return confirm+" colocar rotonda · 3 × 3 casillas · B / Esc cancelar"
-			if g.construction_mode=="signal": return confirm+" instalar o configurar semáforo · B / Esc cancelar"
+			if g.construction_mode=="signal": return confirm+" instalar / configurar · Regula ambos ejes, sin girar"
+			if g.construction_mode.begins_with("sign:"): return confirm+" colocar / retirar señal · "+("X" if g.last_pad else "R")+" girar · Y catálogo"
 			return confirm+(" fijar inicio" if g.anchor==g.NO_CELL else " construir tramo")+" · "+("X" if g.last_pad else "R")+" cambiar trazado · Y catálogo"
 		"close_route": return confirm+" cerrar / abrir la vía seleccionada"
-		"repair_route": return confirm+" reparar · "+("X" if g.last_pad else "U")+" mejorar al tipo elegido · Cierra la vía antes"
+		"repair_route": return confirm+" elegir extremos y reparar · "+("X" if g.last_pad else "U")+" mejorar al tipo elegido"
 		"demolish_route": return confirm+" destruir la vía · Coste: 25 % de construcción · 5 s de obra"
 		"fell_trees": return confirm+" talar árboles · 20 € por casilla · 3 s de obra"
-	return "☰ menú · View mapa · L3 pausa · B cerrar, volver o cancelar" if g.last_pad else "6 / F10 menú · B / Esc cerrar, volver o cancelar"
+		"remove_element": return confirm+" eliminar señales o semáforos · La carretera permanece"
+		"undo_build": return confirm+" deshacer la última construcción válida"
+		"upgrade_road": return confirm+" mejorar · Cierra la vía y elige una categoría superior"
+		"open_services": return confirm+" abrir servicios y gestión de la red"
+	return "☰ menú · View mapa · L3 pausa · B cerrar, volver o cancelar" if g.last_pad else "8 / F10 menú · B / Esc cerrar, volver o cancelar"
 
 func draw() -> void:
 	hover_hint=""
 	box(Rect2(RECT.position+Vector2(0,4),RECT.size),Color(0.02,0.06,0.04,0.5),Color.TRANSPARENT,11)
 	box(RECT,Color("142c26"),Color("43604b"),11)
 	g.ui_hits.append({"rect":RECT,"action":"toolbar:block"})
-	var labels=["Construir","Cerrar","Reparar","Destruir","Talar"]
-	var descriptions=["Construir carreteras · Elige dos extremos para trazar la vía","Cerrar / abrir vías · Prepara el tramo antes de hacer obras","Reparar carreteras · Restaura su conservación y seguridad","Destruir la vía seleccionada · Coste del 25 % y 5 s de obra","Talar árboles · Despeja terreno por 20 € la casilla"]
-	for i in 5:
+	var labels=["Construir","Cerrar","Reparar","Destruir","Talar","Eliminar","Deshacer","Mejorar","Menú","Servicios"]
+	var descriptions=["Construir carreteras · Elige dos extremos para trazar la vía","Cerrar / abrir vías · Prepara el tramo antes de hacer obras","Reparar carreteras · Elige dos extremos; cierre y reapertura automáticos","Destruir la vía seleccionada · Coste del 25 % y 5 s de obra","Talar árboles · Despeja terreno por 20 € la casilla","Eliminar señales y semáforos sin destruir la carretera","Deshacer la última construcción válida","Mejorar · Cierra la vía y selecciona una categoría superior","Menú de la región","Servicios y gestión de la red"]
+	# Menú queda junto a Deshacer y Mejorar; Servicios es una herramienta navegable.
+	var order=[0,1,2,3,4,5,6,7,9,8]
+	for slot in order.size():
+		var i: int = order[slot]
 		var name: String = g.TOOLS[i].icon
-		var label: String = labels[i]
+		var label: String = labels[slot]
 		if i==1 and g.roads.has(g.cursor) and g.roads[g.cursor].closed: name="open";label="Abrir"
-		tile(Rect2(60+i*86,700,80,66),name,label,"tool:"+str(i),g.tool==i,Color(ACCENTS[i]),"" if g.last_pad else str(i+1),true,descriptions[i])
-	v.rect(Rect2(498,708,1,50),Color("365348"))
-	var selector=Rect2(512,700,308,66)
+		var enabled = g.services.can_undo() if i==6 else (can_upgrade() if i==7 else true)
+		var shortcut = "" if g.last_pad else (str(i+1) if i<7 else ("U" if i==7 else ("8" if i==9 else "")))
+		if g.last_pad and i==9: shortcut="☰"
+		tile(Rect2(60+slot*64,700,58,66),name,label,"tool:"+str(i),g.tool==i,Color(ACCENTS[i]),shortcut,enabled,descriptions[slot],true)
+	v.rect(Rect2(706,708,1,50),Color("365348"))
+	var selector=Rect2(720,700,496,66)
 	var selected=g.panel=="catalog"
 	box(selector,Color("2b493e") if hovered(selector) or selected else Color("213a34"),v.GREEN if selected else Color("365348"))
-	box(Rect2(520,708,50,50),Color("142c26"),Color("365348"),5)
+	box(Rect2(728,708,50,50),Color("142c26"),Color("365348"),5)
 	if g.construction_mode=="roundabout":
 		var image=v.road_conditions[g.kind].roundabout
-		if image!=null: v.canvas.draw_texture_rect(image,Rect2(525,713,40,40),false)
-	elif g.construction_mode=="signal": icon("signal",Vector2(545,733),v.GREEN,38)
-	else: v.sprite("roads",g.kind,Rect2(525,713,40,40))
-	v.text(Vector2(582,717),"CONSTRUCCIÓN · Y",10,v.MUTED)
+		if image!=null: v.canvas.draw_texture_rect(image,Rect2(733,713,40,40),false)
+	elif g.construction_mode=="signal": icon("signal",Vector2(753,733),v.GREEN,38)
+	elif g.construction_mode.begins_with("sign:"): v.sign_icon(g.construction_mode.trim_prefix("sign:"),Vector2(753,733),36,g.signage.heading)
+	else: v.sprite("roads",g.kind,Rect2(733,713,40,40))
+	v.text(Vector2(790,717),"CONSTRUCCIÓN · Y",10,v.MUTED)
 	var title=g.Catalog.ROADS[g.kind].name
 	var detail=str(g.Catalog.ROADS[g.kind].lanes)+" carriles · "+g.cash(g.Catalog.ROADS[g.kind].cost)+" / casilla"
 	if g.construction_mode=="signal": title="Semáforo";detail="A sobre una carretera · Gratis"
 	elif g.construction_mode=="roundabout": title="Rotonda · "+title;detail="3 × 3 casillas · "+g.cash(g.Catalog.ROADS[g.kind].cost*9)
-	v.text(Vector2(582,738),fit(title,196,14),14,v.PAPER)
-	v.text(Vector2(582,755),detail,11,v.MUTED)
-	icon("chevron_down",Vector2(801,734),v.GREEN,15)
+	elif g.construction_mode.begins_with("sign:"):
+		title=g.RoadSigns.definition(g.construction_mode.trim_prefix("sign:")).name
+		detail="Sentido "+g.RoadSigns.HEADINGS[g.signage.heading]+" · Gratis · "+("X" if g.last_pad else "R")+" girar"
+	v.text(Vector2(790,738),fit(title,382,14),14,v.PAPER)
+	v.text(Vector2(790,755),detail,11,v.MUTED)
+	icon("chevron_down",Vector2(1198,734),v.GREEN,15)
 	g.ui_hits.append({"rect":selector,"action":"catalog"})
-	if hovered(selector): hover_hint="Catálogo de carreteras y puentes · Y / V abrir · Flechas o cruceta elegir"
-	tile(Rect2(834,700,54,66),"roundabout","Rotonda","toolbar:roundabout",g.tool==0 and g.construction_mode=="roundabout",v.GREEN,"" if g.last_pad else "O",true,"Rotonda de 3 × 3 casillas · Usa el tipo de vía elegido",true)
-	tile(Rect2(896,700,54,66),"signal","Semáf.","toolbar:signal",g.tool==0 and g.construction_mode=="signal",v.GREEN,"" if g.last_pad else "T",true,"Semáforo · Colocar y configurar sobre una carretera",true)
-	tile(Rect2(958,700,54,66),"upgrade","Mejorar","toolbar:upgrade",false,Color("a7d9c0"),("X" if g.tool==2 else "") if g.last_pad else "U",can_upgrade(),"Mejorar · Cierra la vía y selecciona una categoría superior en el catálogo",true)
-	tile(Rect2(1020,700,54,66),"undo","Deshacer","toolbar:undo",false,Color("a7d9c0"),"" if g.last_pad else "Z",g.services.can_undo(),"Deshacer · Ctrl+Z · Antes de 60 s y del primer uso de la construcción",true)
-	v.rect(Rect2(1086,708,1,50),Color("365348"))
-	tile(Rect2(1100,700,116,66),"menu","Menú","menu",g.tool==5,v.GREEN,"☰" if g.last_pad else "6",true,"Menú de la región · Ciudades, objetivos, servicios y contabilidad")
+	if hovered(selector): hover_hint="Catálogo de carreteras, puentes y señales · Y / V abrir"
 	var note=hint() if not g.event_notices.pending.is_empty() else (hover_hint if not hover_hint.is_empty() else hint())
-	var keys="LB/RB herramientas · View mapa · ☰ menú" if g.last_pad else "1–5 herramientas · 6 menú"
+	var keys="LB/RB herramientas · View mapa · ☰ menú" if g.last_pad else "1–7 herramientas · 8 menú"
 	var width=g.font.get_string_size(keys,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x
 	v.text(Vector2(62,780),fit(note,minf(900,1130-width),12),12,v.MUTED)
 	v.text(Vector2(1216-width,780),keys,12,Color("c4d5aa"))

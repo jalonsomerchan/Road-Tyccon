@@ -10,8 +10,11 @@ var scenery_atlas_size = Vector2.ONE
 var atlas_white_uv = Vector2.ZERO
 var sheets: Dictionary = {}
 const Connections = preload("res://scripts/road_connections.gd")
+const RoundaboutArt = preload("res://scripts/roundabout_art.gd")
+const MAX_ROUNDABOUT_VARIANTS = 12
 var road_variants: Array = []
 var road_conditions: Array = []
+var roundabout_variants: Dictionary = {}
 var environment: Dictionary = {}
 var tooltip_rect = Rect2()
 var visible_car_tickets: Array = []
@@ -29,16 +32,26 @@ const PAPER = Color("f2edda")
 const MUTED = Color("a0b4a4")
 const GREEN = Color("d3e69b")
 const WORLD = Rect2(0, 84, 1280, 604)
+const PAVEMENT_TILE = 12
 
 func _init(game) -> void:
 	g = game
 	canvas = game
-	for family in ["terrain", "roads", "props"]:
+	# Los índices de parcelas y estructuras urbanas siguen apuntando a sus sprites.
+	var used_frames = {"terrain":[0,2,5,10,PAVEMENT_TILE], "props":[6,7,8,15]}
+	for family in used_frames:
 		var frames: Array = []
-		for i in 16:
+		frames.resize(16)
+		for i in used_frames[family]:
 			var path = "res://assets/sprites/%s/sprite-%d.png" % [family, i + 1]
-			frames.append(load(path) if ResourceLoader.exists(path) else null)
+			frames[i] = load(path)
 		sheets[family] = frames
+	var nature_frames = {"trees":["tree",4], "mountains":["mountain",3], "scrub":["scrub",2]}
+	for family in nature_frames:
+		var spec: Array = nature_frames[family]
+		sheets[family] = []
+		for i in spec[1]:
+			sheets[family].append(load("res://assets/sprites/nature/%s-%d.png" % [spec[0],i+1]))
 	var straight_frames: Array = []
 	for slug in Connections.SLUGS:
 		var variants: Dictionary = {}
@@ -49,7 +62,9 @@ func _init(game) -> void:
 		straight_frames.append(variants.straight)
 	sheets["roads"] = straight_frames
 	sheets["buildings"] = []
-	for name in g.CityDesign.BUILDINGS: sheets.buildings.append(load("res://assets/sprites/city-v2/"+name+".png"))
+	for name in g.CityDesign.BUILDINGS:
+		var folder = "city-v2" if name=="park" else "city-v3"
+		sheets.buildings.append(load("res://assets/sprites/%s/%s.png" % [folder,name]))
 	sheets["vehicles"] = []
 	for i in 8: sheets.vehicles.append(load("res://assets/sprites/vehicles-v2/car-"+str(i+1)+".png"))
 	sheets["city_streets"] = []
@@ -77,13 +92,9 @@ func _init(game) -> void:
 
 func batch_scenery_atlas() -> void:
 	# Una textura compartida permite a Godot agrupar miles de sprites sin cambiar de textura.
-	var families = ["terrain","props","buildings","city_streets"]
-	var count = 1
-	for family in families: count += sheets[family].size()
-	scenery_atlas_size = Vector2(1024,ceilf(count/16.0)*64)
-	var atlas_image = Image.create(int(scenery_atlas_size.x),int(scenery_atlas_size.y),false,Image.FORMAT_RGBA8)
-	var index = 0
-	var regions: Array = []
+	var families = ["terrain","props","trees","mountains","scrub","buildings","city_streets"]
+	var large_sources: Array = []
+	var small_sources: Array = []
 	for family in families:
 		for i in sheets[family].size():
 			var source = sheets[family][i]
@@ -91,11 +102,27 @@ func batch_scenery_atlas() -> void:
 			var pixels: Image = source.get_image()
 			if pixels.is_compressed(): pixels.decompress()
 			pixels.convert(Image.FORMAT_RGBA8)
-			var at = Vector2i((index%16)*64,int(index/16)*64)
-			atlas_image.blit_rect(pixels,Rect2i(0,0,64,64),at)
-			regions.append({"family":family,"index":i,"at":at})
-			index += 1
-	var white_at = Vector2i((index%16)*64,int(index/16)*64)
+			var entry = {"family":family,"index":i,"pixels":pixels}
+			if pixels.get_size() == Vector2i(32,32): small_sources.append(entry)
+			else: large_sources.append(entry)
+	var small_slots = ceili(float(small_sources.size())/4.0)
+	var white_index = large_sources.size()+small_slots
+	const COLUMNS = 8
+	scenery_atlas_size = Vector2(COLUMNS*64,ceili(float(white_index+1)/COLUMNS)*64)
+	var atlas_image = Image.create(int(scenery_atlas_size.x),int(scenery_atlas_size.y),false,Image.FORMAT_RGBA8)
+	var regions: Array = []
+	for i in large_sources.size():
+		var entry: Dictionary = large_sources[i]
+		var at = Vector2i(i%COLUMNS,i/COLUMNS)*64
+		atlas_image.blit_rect(entry.pixels,Rect2i(0,0,64,64),at)
+		regions.append({"family":entry.family,"index":entry.index,"at":at,"size":Vector2i(64,64)})
+	for i in small_sources.size():
+		var entry: Dictionary = small_sources[i]
+		var slot = large_sources.size()+int(i/4)
+		var at = Vector2i(slot%COLUMNS,slot/COLUMNS)*64+Vector2i(i%2,i%4/2)*32
+		atlas_image.blit_rect(entry.pixels,Rect2i(0,0,32,32),at)
+		regions.append({"family":entry.family,"index":entry.index,"at":at,"size":Vector2i(32,32)})
+	var white_at = Vector2i(white_index%COLUMNS,white_index/COLUMNS)*64
 	atlas_image.fill_rect(Rect2i(white_at,Vector2i(64,64)),Color.WHITE)
 	atlas_white_uv = (Vector2(white_at)+Vector2(32.5,32.5))/scenery_atlas_size
 	var atlas = ImageTexture.create_from_image(atlas_image)
@@ -103,7 +130,7 @@ func batch_scenery_atlas() -> void:
 	for region in regions:
 		var frame = AtlasTexture.new()
 		frame.atlas = atlas
-		frame.region = Rect2(Vector2(region.at),Vector2(64,64))
+		frame.region = Rect2(Vector2(region.at),Vector2(region.size))
 		frame.filter_clip = true
 		sheets[region.family][region.index] = frame
 
@@ -153,6 +180,7 @@ func draw() -> void:
 		draw_environment()
 		g.gameplay_ui.draw_world(self)
 		draw_cars()
+		draw_signage()
 		draw_cities()
 		draw_city_accesses()
 		draw_selection()
@@ -214,7 +242,7 @@ func draw_title_map() -> void:
 	for y in 13:
 		for x in 20:
 			var variation = posmod(x * 3 + y * 7, 11)
-			sprite("terrain", 2 if variation == 0 else (3 if variation == 7 else 0), Rect2(origin + Vector2(x, y) * cell, Vector2.ONE * cell))
+			sprite("terrain", 2 if variation == 0 else 0, Rect2(origin + Vector2(x, y) * cell, Vector2.ONE * cell))
 	# Un río ancho y suavemente cambiante atraviesa la región; la carretera lo cruza por un puente.
 	var river_columns: Array[int] = []
 	for y in 13:
@@ -222,18 +250,18 @@ func draw_title_map() -> void:
 		river_columns.append(center)
 		for x in range(center - 1, center + 2):
 			sprite("terrain", 5, Rect2(origin + Vector2(x, y) * cell, Vector2.ONE * cell))
-	# Rocas y árboles, colocados con una pauta fija para que el menú no parpadee.
+	# Cumbres y arboledas con la misma paleta que el mapa jugable.
 	for y in 13:
 		for x in 20:
 			var p = Vector2i(x, y)
 			var river = river_columns[y]
 			if abs(x - river) <= 1 or y == 7 or (x >= 9 and x <= 13 and y >= 4 and y <= 10): continue
 			if (x * 17 + y * 31) % 19 == 0:
-				sprite("props", 9 if (x + y) % 2 == 0 else 10, Rect2(origin + Vector2(p) * cell, Vector2.ONE * cell))
+				sprite("mountains", posmod(x + y, 3), Rect2(origin + Vector2(p) * cell, Vector2.ONE * cell))
 			elif (x * 13 + y * 23) % 5 <= 1:
-				var tree = 6 + posmod(x * 7 + y * 11, 3)
+				var tree = posmod(x * 7 + y * 11, 4)
 				var size = cell * (0.86 + float(posmod(x + y * 3, 4)) * 0.06)
-				sprite("props", tree, Rect2(origin + Vector2(p) * cell + (Vector2.ONE * cell - Vector2.ONE * size) / 2, Vector2.ONE * size))
+				sprite("trees", tree, Rect2(origin + Vector2(p) * cell + (Vector2.ONE * cell - Vector2.ONE * size) / 2, Vector2.ONE * size))
 	# Pequeños barrios a ambos lados del río.
 	var buildings = [
 		Vector2i(2, 2), Vector2i(3, 2), Vector2i(4, 2), Vector2i(2, 3), Vector2i(4, 3),
@@ -244,7 +272,12 @@ func draw_title_map() -> void:
 	]
 	for i in buildings.size():
 		var p: Vector2i = buildings[i]
-		sprite("buildings", posmod(i * 3 + p.x, 8), Rect2(origin + Vector2(p) * cell, Vector2.ONE * cell))
+		var area = Rect2(origin + Vector2(p) * cell, Vector2.ONE * cell)
+		var urban = p.x>=14
+		var count: int = g.CityDesign.URBAN_BUILDINGS.size() if urban else g.CityDesign.HOUSES.size()
+		var index: int = posmod(i*3+p.x,count)+(g.CityDesign.FIRST_URBAN if urban else 0)
+		sprite("terrain",PAVEMENT_TILE,area)
+		sprite("buildings",index,area.grow(-cell*(0.025 if urban else 0.095)))
 	var network: Dictionary = {}
 	for x in range(0, 20): network[Vector2i(x, 7)] = true
 	for y in range(4, 8): network[Vector2i(5, y)] = true
@@ -278,16 +311,19 @@ func draw_roads() -> void:
 	for item in visible: draw_road_status(item.p,item.area)
 
 func tile_area(p: Vector2i) -> Rect2:
-	return Rect2((g.screen(Vector2(p)) - Vector2.ONE * g.tile / 2).floor(), Vector2.ONE * ceilf(g.tile + 0.2))
+	return Rect2(g.screen(Vector2(p)) - Vector2.ONE * g.tile / 2, Vector2.ONE * g.tile)
 
 func draw_connection(kind: int, shape: String, area: Rect2, turns: int) -> void:
-	var texture = road_variants[kind][shape]
+	draw_rotated_texture(road_variants[kind][shape],area,turns)
+
+func draw_rotated_texture(texture: Texture2D, area: Rect2, turns: int, alpha: float = 1.0) -> void:
 	if texture == null: return
+	var tint = Color(1,1,1,alpha)
 	if turns == 0:
-		canvas.draw_texture_rect(texture, area, false)
+		canvas.draw_texture_rect(texture, area, false, tint)
 	else:
 		canvas.draw_set_transform(area.get_center(), turns * PI / 2)
-		canvas.draw_texture_rect(texture, Rect2(-area.size / 2, area.size), false)
+		canvas.draw_texture_rect(texture, Rect2(-area.size / 2, area.size), false, tint)
 		canvas.draw_set_transform(Vector2.ZERO)
 
 func prepare_road_layout() -> void:
@@ -297,21 +333,47 @@ func prepare_road_layout() -> void:
 	junction_coverage.clear()
 	node_shapes.clear()
 	for p in g.roads:
-		var r = g.roads[p]
-		node_shapes[p] = Connections.shape_for(Connections.mask_for(p, g.roads, g.city_cells, g.city_connectors), r.axis)
+		node_shapes[p] = road_shape(p)
+
+func road_shape(p: Vector2i) -> Dictionary:
+	var axis: bool = g.roads[p].axis
+	var mask = 0
+	for i in Connections.DIRECTIONS.size():
+		if g.surface_link(p,p+Connections.DIRECTIONS[i]): mask |= 1 << i
+	return Connections.shape_for(mask,axis)
+
+func draw_bridge_decks() -> void:
+	var viewport = Rect2(-g.tile,-g.tile,1280+g.tile*2,800+g.tile*2)
+	for p in g.bridge_decks:
+		var area = tile_area(p)
+		if not viewport.intersects(area): continue
+		var span: Vector4i = g.bridge_decks[p]
+		var from: Dictionary = g.roads.get(Vector2i(span.x,span.y),{})
+		var to: Dictionary = g.roads.get(Vector2i(span.z,span.w),{})
+		if from.is_empty() or to.is_empty() or not g.bridge_spans.has(span): continue
+		var along_x = span.x!=span.z
+		var shadow = Vector2(0,g.tile*0.12) if along_x else Vector2(g.tile*0.12,0)
+		var deck_width = (0.38 if g.Catalog.ROADS[from.kind].lanes==1 else 1.0)*g.tile
+		var inset = Vector2(0,(g.tile-deck_width)*0.5) if along_x else Vector2((g.tile-deck_width)*0.5,0)
+		rect(Rect2(area.position+inset-shadow,area.size-2*inset+2*shadow),Color(0.10,0.13,0.12,0.42))
+		draw_connection(from.kind,"straight",area,1 if along_x else 0)
+		if g.bridge_spans[span]>0 or from.work>0 or to.work>0 or from.closed or to.closed:
+			rect(Rect2(area.position+inset,area.size-2*inset),Color(0.95,0.58,0.23,0.28))
+
+func road_texture(p: Vector2i, shape: String) -> Texture2D:
+	var kind: int = g.roads[p].kind
+	var state = g.incidents.visual_state(p)
+	if shape == "straight" and state != "" and road_conditions[kind][state] != null:
+		return road_conditions[kind][state]
+	return road_variants[kind][shape]
 
 func draw_road(p: Vector2i, area: Rect2) -> void:
-	var r = g.roads[p]
 	if g.incidents.roundabout_cells.has(p): return
+	var r = g.roads[p]
 	var shape = node_shapes.get(p, Connections.shape_for(0, r.axis))
-	var state = g.incidents.visual_state(p)
-	if shape.shape == "straight" and state != "" and road_conditions[r.kind][state] != null:
-		var alpha = 1.0 - g.incidents.fade(p)
-		canvas.draw_set_transform(area.get_center(), shape.turns * PI / 2)
-		canvas.draw_texture_rect(road_conditions[r.kind][state], Rect2(-area.size / 2, area.size), false, Color(1,1,1,alpha))
-		canvas.draw_set_transform(Vector2.ZERO)
-	else:
-		draw_connection(r.kind, shape.shape, area, shape.turns)
+	var texture = road_texture(p,shape.shape)
+	var alpha = 1.0 if texture==road_variants[r.kind][shape.shape] else 1.0-g.incidents.fade(p)
+	draw_rotated_texture(texture,area,shape.turns,alpha)
 
 func draw_road_status(p: Vector2i, area: Rect2) -> void:
 	var r = g.roads[p]
@@ -383,33 +445,43 @@ func car_draw_list() -> Array:
 		var shape = Vector2(size*.52,size*.94)
 		var bounds_size = Vector2(absf(cos(angle))*shape.x+absf(sin(angle))*shape.y,absf(sin(angle))*shape.x+absf(cos(angle))*shape.y)
 		var bounds = Rect2(pos-bounds_size/2,bounds_size)
-		var key = Vector2i((pos/size).floor())
+		var start = Vector2i(car.path[car.step])
+		var next = Vector2i(car.path[mini(car.step+1,car.path.size()-1)])
+		var elevated = next in g.bridge_links.get(start,[])
+		var cell = Vector2i((pos/size).floor())
+		var key = Vector3i(cell.x,cell.y,int(elevated))
 		var clear = true
 		for dy in range(-1,2):
 			for dx in range(-1,2):
-				for other in occupied.get(key+Vector2i(dx,dy),[]):
+				for other in occupied.get(key+Vector3i(dx,dy,0),[]):
 					if bounds.intersects(other): clear=false; break
 		if not clear: continue
 		if not occupied.has(key): occupied[key]=[]
 		occupied[key].append(bounds)
-		result.append({"car":car,"pos":pos,"direction":direction,"angle":angle,"size":size,"bounds":bounds,"sprite":posmod(car.get("sprite_id",car.get("color",0)),8)})
+		result.append({"car":car,"pos":pos,"direction":direction,"angle":angle,"size":size,"bounds":bounds,"elevated":elevated,"sprite":posmod(car.get("sprite_id",car.get("color",0)),8)})
 	return result
 
 func draw_cars() -> void:
 	visible_car_tickets.clear()
+	var elevated: Array = []
 	for item in car_draw_list():
-		var car = item.car
-		var pos: Vector2 = item.pos
-		var size: float = item.size
-		visible_car_tickets.append(car.get("ticket",0))
-		# Las texturas de coches se mantienen independientes del atlas del terreno.
-		sprite("vehicles",item.sprite,Rect2(pos-Vector2.ONE*size/2,Vector2.ONE*size),item.angle)
-		if car.get("blocked",false):
-			canvas.draw_circle(pos+Vector2(-3,-3),2,Color("ff554b"))
-			canvas.draw_circle(pos+Vector2(3,-3),2,Color("ff554b"))
-		if car.get("crash_left",0.0)>0:
-			canvas.draw_circle(pos+Vector2(0,-10),7,Color("9f3b32"))
-			text(pos+Vector2(-2,-5),"!",15,Color("fff0ce"))
+		if item.elevated: elevated.append(item)
+		else: draw_car(item)
+	draw_bridge_decks()
+	for item in elevated: draw_car(item)
+
+func draw_car(item: Dictionary) -> void:
+	var car = item.car
+	var pos: Vector2 = item.pos
+	var size: float = item.size
+	visible_car_tickets.append(car.get("ticket",0))
+	sprite("vehicles",item.sprite,Rect2(pos-Vector2.ONE*size/2,Vector2.ONE*size),item.angle)
+	if car.get("blocked",false):
+		canvas.draw_circle(pos+Vector2(-3,-3),2,Color("ff554b"))
+		canvas.draw_circle(pos+Vector2(3,-3),2,Color("ff554b"))
+	if car.get("crash_left",0.0)>0:
+		canvas.draw_circle(pos+Vector2(0,-10),7,Color("9f3b32"))
+		text(pos+Vector2(-2,-5),"!",15,Color("fff0ce"))
 
 func draw_cities() -> void:
 	for c in g.cities:
@@ -456,12 +528,18 @@ func draw_selection() -> void:
 	var color = Color("ff8b7c") if g.TOOLS[g.tool].id in ["close_route","demolish_route"] else GREEN
 	canvas.draw_rect(area.grow(2), Color("223c2f"), false, 4)
 	canvas.draw_rect(area.grow(2), color, false, 2)
+	if g.tool==0 and g.construction_mode.begins_with("sign:"):
+		var direction = Vector2(g.RoadSigns.DIRECTIONS[g.signage.heading])
+		var at = area.get_center()
+		var tip = at+direction*g.tile*0.34
+		canvas.draw_line(at-direction*g.tile*0.23,tip,GREEN,maxf(2.0,g.tile*0.06),true)
+		canvas.draw_colored_polygon(PackedVector2Array([tip,tip+direction.rotated(2.5)*g.tile*0.21,tip+direction.rotated(-2.5)*g.tile*0.21]),GREEN)
 	if g.anchor!=g.NO_CELL:
 		var distance: Vector2i = (g.cursor-g.anchor).abs()
 		var count = distance.x+distance.y+1
 		var tag = area.position + Vector2(g.tile + 10, -8)
 		card(Rect2(tag, Vector2(190, 32)))
-		text(tag + Vector2(10, 22), str(count) + " secciones · " + g.cash(count * g.Catalog.ROADS[g.kind].cost), 14, GREEN)
+		text(tag + Vector2(10, 22), str(count) + " secciones" if g.TOOLS[g.tool].id == "repair_route" else str(count) + " secciones · " + g.cash(count * g.Catalog.ROADS[g.kind].cost), 14, GREEN)
 
 func draw_income() -> void:
 	var stacks: Dictionary = {}
@@ -539,7 +617,7 @@ func draw_jobs() -> void:
 		if not area.intersects(WORLD): continue
 		canvas.draw_rect(area.grow(-1),Color("efbe70"),false,2)
 		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x,4)),INK)
-		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x*(1-job.left/job.total),4)),Color("efbe70"))
+		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x*(1-job.left/maxf(0.001,job.total)),4)),Color("efbe70"))
 	for p in g.maintenance.jobs:
 		var job = g.maintenance.jobs[p]
 		var area = tile_area(p)
@@ -547,7 +625,7 @@ func draw_jobs() -> void:
 		canvas.draw_rect(area,Color("efbe70"),false,2)
 		if job.type == "logging": draw_tool_icon("tree",area.get_center(),Color("efbe70"))
 		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x,4)),INK)
-		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x*(1-job.left/job.total),4)),Color("efbe70"))
+		rect(Rect2(area.position+Vector2(0,area.size.y-4),Vector2(area.size.x*(1-job.left/maxf(0.001,job.total)),4)),Color("efbe70"))
 
 func draw_panel() -> void:
 	g.ui_hits.clear()
@@ -703,7 +781,8 @@ func draw_info() -> void:
 		var c = g.cities[ci]
 		text(Vector2(166, 230), c.name, 29)
 		text(Vector2(166, 308),g.gameplay.PROFILES[g.gameplay.profile(c)]+" · "+g.gameplay.profile_description(c),16,GREEN)
-		text(Vector2(166, 268), str(c.pop) + " habitantes · " + str(c.received) + " viajes · " + str(c.accesses.size()) + " accesos", 18, GREEN)
+		var settlement = "Ciudad" if g.CityDesign.is_urban(c) else "Pueblo"
+		text(Vector2(166, 268), settlement + " · " + str(c.pop) + " habitantes · " + str(c.received) + " viajes · " + str(c.accesses.size()) + " accesos", 18, GREEN)
 	elif g.roads.has(g.cursor):
 		var r = g.roads[g.cursor]
 		text(Vector2(166, 230), g.Catalog.ROADS[r.kind].name, 26)
@@ -711,7 +790,7 @@ func draw_info() -> void:
 		text(Vector2(166, 302), "Conservación: " + str(int(r.hp)) + "%", 18)
 		if r.work > 0: text(Vector2(166, 334), "Obra pendiente: %.1f s" % r.work, 18)
 	else:
-		text(Vector2(166, 232), ["Pradera", "Río", "Bosque", "Montaña", "Roquedo"][g.ground(g.cursor)], 26)
+		text(Vector2(166, 232), ["Pradera", "Río", "Bosque", "Montaña", "Montaña"][g.ground(g.cursor)], 26)
 	text(Vector2(166, 409), "TU RED", 13, MUTED)
 	text(Vector2(166, 451), str(g.cities.size()) + " ciudades     " + str(g.cars.size()) + " coches     " + str(g.trips) + " viajes completados", 21)
 	text(Vector2(166, 492), "Ingresos " + g.cash(g.earned) + " · Accidentes " + str(g.incidents.accidents) + " · Pérdidas " + g.cash(g.incidents.accident_losses), 21, GREEN)
@@ -724,14 +803,14 @@ func draw_help() -> void:
 		"Cada carretera ocupa 1 casilla. Sus carriles determinan su anchura visual.",
 		"A / Enter fija el inicio. Mueve el cursor y confirma el tramo con A / Enter.",
 		"Las obras tienen franjas ámbar. Los cierres, barreras rojas y una cruz.",
-		"Cierra antes de reparar o mejorar. Después de las obras, vuelve a abrir.",
+		"La reparación cierra el tramo, espera a los coches y lo reabre al terminar.",
 		"Conecta las calles y los accesos señalados de las ciudades.",
 		"Los coches viajan y pagan al llegar: verás el ingreso junto a la ciudad.",
 		"El fuego corta y destruye las vías. Envía bomberos y reconstruye las quemadas.",
-		"Sin semáforo activo, los coches paran y ceden el paso en los cruces.",
-		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las cinco herramientas.",
+		"Catálogo → Señales. Gira con R / X y coloca o retira con Enter / A.",
+		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las siete herramientas.",
 		"Mayús mover rápido · Espacio / L3 pausa · F velocidad · G / R3 siguiente ciudad.",
-		"I inspección · M / View mapa · 6 / F10 / ☰ menú · B / Esc cancelar.",
+		"I inspección · M / View mapa · 8 / F10 / ☰ menú · B / Esc cancelar.",
 		"K objetivos · C inspeccionar coche · L capas · Ctrl+Z deshacer · Menú: Red y servicios."
 	]
 	for i in lines.size(): text(Vector2(166, 191 + i * 38), lines[i], 18, PAPER)
@@ -751,14 +830,49 @@ func draw_city_accesses() -> void:
 				card(Rect2(at + Vector2(16, -42), Vector2(190, 30)))
 				text(at + Vector2(27, -21), "ACCESO · " + c.name, 14, color)
 
+func roundabout_texture(center: Vector2i, kind: int) -> Texture2D:
+	var base: Texture2D = road_conditions[kind].roundabout
+	if base == null: return null
+	var key = [kind]
+	var approaches: Array = []
+	for i in Connections.DIRECTIONS.size():
+		var direction: Vector2i = Connections.DIRECTIONS[i]
+		var neighbour = center+direction*2
+		if not g.edge_allowed(center+direction,neighbour): continue
+		var texture: Texture2D
+		var turns = i%2
+		var other = g.incidents.roundabout_cells.get(neighbour,g.NO_CELL)
+		if other!=g.NO_CELL:
+			if other!=center+direction*3: continue
+			# Ambas rotondas comparten el mismo perfil cuando son contiguas.
+			var other_kind: int = g.incidents.roundabouts[other].kind
+			texture = road_variants[mini(kind,other_kind)].straight
+		else:
+			var shape = node_shapes.get(neighbour,Connections.shape_for(0,g.roads[neighbour].axis))
+			turns = shape.turns
+			texture = road_texture(neighbour,shape.shape)
+		if texture == null or (texture==road_variants[kind].straight and turns==i%2): continue
+		key.append_array([i,texture.get_instance_id(),turns])
+		approaches.append([i,texture,turns])
+	if approaches.is_empty(): return base
+	if roundabout_variants.has(key): return roundabout_variants[key]
+	var pixels = base.get_image()
+	pixels.convert(Image.FORMAT_RGBA8)
+	for arm in approaches:
+		RoundaboutArt.fit_arm(pixels,arm[1].get_image(),arm[0],arm[2])
+	var fitted = ImageTexture.create_from_image(pixels)
+	if roundabout_variants.size()>=MAX_ROUNDABOUT_VARIANTS:
+		roundabout_variants.erase(roundabout_variants.keys()[0])
+	roundabout_variants[key]=fitted
+	return fitted
+
 func draw_roundabouts() -> void:
 	for center in g.incidents.roundabouts:
-		var info = g.incidents.roundabouts[center]
-		var texture = road_conditions[info.kind].roundabout
-		if texture == null: continue
 		var size = g.tile * 3
 		var area = Rect2(g.screen(Vector2(center)) - Vector2.ONE * size / 2, Vector2.ONE * size)
 		if not area.intersects(Rect2(-size,-size,1280+size*2,800+size*2)): continue
+		var texture = roundabout_texture(center,g.incidents.roundabouts[center].kind)
+		if texture == null: continue
 		var alpha = 1.0
 		for p in g.incidents.ring_cells(center): alpha = minf(alpha,1.0-g.incidents.fade(p))
 		canvas.draw_texture_rect(texture,area,false,Color(1,1,1,alpha))
@@ -775,7 +889,7 @@ func draw_environment() -> void:
 		var texture = environment.fire[posmod(int(g.visual_clock*7)+p.x+p.y,4)]
 		if texture != null: canvas.draw_texture_rect(texture,area,false)
 	for p in g.incidents.signals:
-		if not g.roads.has(p): continue
+		if not g.roads.has(p) or g.is_bridge(p): continue
 		var at = g.screen(Vector2(p))
 		var enabled: bool = g.incidents.signals[p].enabled
 		var shape = node_shapes.get(p,{"shape":"straight","turns":1 if g.roads[p].axis else 0})
@@ -790,6 +904,72 @@ func draw_environment() -> void:
 			canvas.draw_circle(pos-lamp*3,2,Color("ef6254") if enabled and not green else Color("43514c"))
 			canvas.draw_circle(pos+lamp*3,2,Color("b3e87d") if enabled and green else Color("43514c"))
 
+func sign_icon(id: String, center: Vector2, side: float, heading: int = 0) -> void:
+	var spec = g.RoadSigns.definition(id)
+	if spec.is_empty(): return
+	var symbol: String = spec.symbol
+	if id in ["one_way","direction"]: symbol = g.RoadSigns.ARROWS[heading]
+	var ink = Color("182623")
+	var white = Color("fff8e3")
+	var red = Color("cb4042")
+	var radius = side*0.5
+	match spec.family:
+		"Prioridad":
+			if id=="stop":
+				var outline = PackedVector2Array()
+				for i in 8: outline.append(center+Vector2.from_angle((i+0.5)*TAU/8)*radius)
+				canvas.draw_colored_polygon(outline,red)
+				ink=white
+			elif id=="priority":
+				canvas.draw_colored_polygon(PackedVector2Array([center+Vector2.UP*radius,center+Vector2.RIGHT*radius,center+Vector2.DOWN*radius,center+Vector2.LEFT*radius]),white)
+				ink=Color("d7a830")
+			else:
+				var vertices = PackedVector2Array([Vector2(-0.5,-0.37),Vector2(0.5,-0.37),Vector2(0,0.5)])
+				for i in 3: vertices[i]=center+vertices[i]*side
+				canvas.draw_colored_polygon(vertices,red)
+				for i in 3: vertices[i]=center+(vertices[i]-center)*0.70
+				canvas.draw_colored_polygon(vertices,white)
+				return
+		"Prohibición":
+			canvas.draw_circle(center,radius,red)
+			if id=="no_entry": ink=white
+			else: canvas.draw_circle(center,radius*0.76,white)
+		"Obligación":
+			if id=="one_way": canvas.draw_rect(Rect2(center-Vector2.ONE*radius,Vector2.ONE*side),Color("24649b"))
+			else: canvas.draw_circle(center,radius,Color("24649b"))
+			ink=white
+		"Peligro","Temporal":
+			var vertices = PackedVector2Array([Vector2(0,-0.53),Vector2(0.55,0.43),Vector2(-0.55,0.43)])
+			for i in 3: vertices[i]=center+vertices[i]*side
+			canvas.draw_colored_polygon(vertices,red)
+			for i in 3: vertices[i]=center+(vertices[i]-center)*0.76
+			canvas.draw_colored_polygon(vertices,Color("f4c858") if spec.family=="Temporal" else white)
+			center.y += side*0.08
+		_:
+			canvas.draw_rect(Rect2(center-Vector2.ONE*radius,Vector2.ONE*side),Color("24649b"))
+			ink=white
+	var size = maxi(5,roundi(side*(0.25 if id=="stop" else (0.39 if symbol.length()>1 else 0.54))))
+	var width = g.font.get_string_size(symbol,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
+	text(center+Vector2(-width/2,(g.font.get_ascent(size)-g.font.get_descent(size))/2),symbol,size,ink)
+	if id in ["no_left","no_right","no_u","no_overtaking"]:
+		canvas.draw_line(center+Vector2(-0.57,0.57)*radius,center+Vector2(0.57,-0.57)*radius,red,maxf(1.0,side*0.07),true)
+
+func draw_signage() -> void:
+	if g.tile<12: return
+	var viewport = Rect2(-g.tile,-g.tile,1280+g.tile*2,800+g.tile*2)
+	var size = clampf(g.tile*0.32,10.0,29.0)
+	for p in g.signage.placed:
+		var center: Vector2 = g.screen(Vector2(p))
+		if not viewport.has_point(center) or not g.roads.has(p): continue
+		var counts = [0,0,0,0]
+		for sign in g.signage.placed[p]:
+			var direction = Vector2(g.RoadSigns.DIRECTIONS[sign.direction])
+			var offset = Vector2(-direction.y,direction.x)*g.tile*0.38
+			var at = center+offset+direction*(-g.tile*0.27+counts[sign.direction]*(size+2))
+			counts[sign.direction] += 1
+			canvas.draw_line(at,at+Vector2(0,size*0.6),Color("686c60"),maxf(1.0,size*0.09))
+			sign_icon(sign.id,at,size,sign.direction)
+
 func draw_tooltip() -> void:
 	tooltip_rect = Rect2()
 	var p: Vector2i = g.hover_cell if g.inside(g.hover_cell) else g.cursor
@@ -803,12 +983,17 @@ func draw_tooltip() -> void:
 	var road = g.roads[actual]
 	var spec = g.Catalog.ROADS[road.kind]
 	var lines: Array = []
+	var signs: Array = g.signage.placed.get(p,[])
+	for sign in signs.slice(0,3):
+		lines.append(g.RoadSigns.definition(sign.id).name+" · "+g.RoadSigns.ARROWS[sign.direction])
+	if signs.size()>3: lines.append("+%d señales"%[signs.size()-3])
 	var status = "INCENDIO · PASO CORTADO" if g.incidents.fire.has(p) else "DEMOLIENDO" if road.get("demolishing",false) else ("EN OBRAS" if road.work > 0 else ("CERRADA" if road.closed else "ABIERTA"))
 	lines.append(status + (" · Rotonda 3×3" if is_roundabout else ""))
 	lines.append(str(spec.lanes) + " carriles · " + str(g.density.get(actual,0)) + "/" + str(g.traffic.capacity(actual)) + " coches")
 	lines.append("Conservación " + str(int(road.hp)) + "% · " + str(int(spec.speed*15)) + " km/h")
 	if g.incidents.fire.has(actual): lines.append("Fuego: −%.1f puntos/s · Envía bomberos"%g.WorldSettings.FIRE_ROAD_DAMAGE)
-	elif g.traffic.junctions.uncontrolled(actual): lines.append("Cruce sin semáforo · Parar y ceder el paso")
+	elif g.traffic.junctions.collision_risk(actual): lines.append("Cruce sin regular · Riesgo de colisión")
+	elif g.traffic.junctions.uncontrolled(actual): lines.append("Cruce regulado por señales de prioridad")
 	lines.append("Accidentes " + str(int(round(g.incidents.risk(actual)*100))) + "%% cada %.1f s" % g.incidents.ACCIDENT_INTERVAL)
 	if g.incidents.fire.has(actual) or g.incidents.snow.has(actual):
 		lines.append(("Fuego +%d%%  " % roundi(g.WorldSettings.FIRE_ACCIDENT_RISK*100) if g.incidents.fire.has(actual) else "") + ("Nieve +%d%%" % roundi(g.WorldSettings.SNOW_ACCIDENT_RISK*100) if g.incidents.snow.has(actual) else ""))
@@ -823,7 +1008,7 @@ func draw_tooltip() -> void:
 	if road.get("reserve",false): lines.append("Reserva · Protegida del abandono")
 	if g.services.service_jobs.has(actual):
 		var job = g.services.service_jobs[actual]
-		lines.append("Mantenimiento %s: %.1f s"%["parcial" if job.partial else "con cierre",job.left])
+		lines.append("Cerrada · esperando a que salgan los coches" if g.services.evacuating(actual) else "Mantenimiento %s: %.1f s"%["parcial" if job.partial else "con cierre",job.left])
 	if road.work > 0: lines.append("Obra pendiente: %.1f s" % road.work)
 	var has_signal = g.incidents.signals.has(actual)
 	var height = 51 + lines.size()*23 + (42 if has_signal else 0)
@@ -860,7 +1045,7 @@ func draw_signal_panel() -> void:
 		if i<2:
 			button(Rect2(918,195+i*92,60,60),"−","signal:"+("ns-" if i==0 else "ew-"))
 			button(Rect2(990,195+i*92,60,60),"+","signal:"+("ns+" if i==0 else "ew+"))
-	var phase = "APAGADO · ceder el paso" if not light.enabled else ("VERDE norte / sur" if g.incidents.signal_allows(g.cursor,Vector2i.UP) else "VERDE este / oeste")
+	var phase = "APAGADO · cruce sin regular" if not light.enabled else ("VERDE norte / sur" if g.incidents.signal_allows(g.cursor,Vector2i.UP) else "VERDE este / oeste")
 	text(Vector2(225,522),phase,23,GREEN)
 	text(Vector2(225,566),"Los coches esperan antes de entrar en la casilla mientras su dirección está roja.",16,MUTED)
 	text(Vector2(225,619),"↑↓ elegir · ←→ ajustar · A / Enter aumentar o activar · B / Esc cerrar",16,PAPER)

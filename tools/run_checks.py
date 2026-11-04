@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GODOT = sys.argv[1] if len(sys.argv) > 1 else '/Applications/Godot.app/Contents/MacOS/Godot'
 CASES = ['smoke', 'starting_cities', 'road_connections', 'presentation', 'visual_refresh',
          'expanding_world', 'cheats', 'urban_roads', 'city_layout', 'incidents',
-         'condition_assets', 'navigation_toolbar', 'title_screen', 'gameplay', 'event_notices', 'fire_junctions', 'construction_catalog', 'world_variety', 'performance_regressions', 'curves', 'steam_deck', 'menu_runtime']
+         'condition_assets', 'navigation_toolbar', 'title_screen', 'gameplay', 'event_notices', 'fire_junctions', 'construction_catalog', 'road_signs', 'world_variety', 'performance_regressions', 'curves', 'steam_deck', 'menu_runtime']
 
 def run(project, case, extra=()):
     args = [GODOT, '--headless', '--path', str(project), '--log-file',

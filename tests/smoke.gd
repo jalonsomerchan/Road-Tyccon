@@ -53,19 +53,15 @@ func run() -> void:
 	game.anchor = game.NO_CELL
 	game.cursor = Vector2i(110,100)
 	game.roads[game.cursor].hp = 40.0
-	game.tool = 2
+	game.select_tool(2)
 	game.apply_action()
-	assert(game.roads[game.cursor].work == 0)
-	game.tool = 1
+	assert(game.anchor == game.cursor)
 	game.apply_action()
-	game.tool = 2
-	game.apply_action()
-	assert(game.roads[game.cursor].work > 0)
-	game.tool = 1
-	game.apply_action()
-	assert(game.roads[game.cursor].closed)
+	assert(game.services.service_jobs.has(game.cursor) and game.roads[game.cursor].closed)
 	for i in 120: game._process(0.1)
-	game.tool = 1
+	assert(not game.services.service_jobs.has(game.cursor) and not game.roads[game.cursor].closed)
+	game.select_tool(1)
+	game.apply_action()
 	game.kind = 8
 	game.upgrade_current()
 	assert(game.roads[game.cursor].kind == 8)

@@ -2,6 +2,7 @@ extends Node2D
 
 const CityRoads = preload("res://scripts/city_roads.gd")
 const CityDesign = preload("res://scripts/city_design.gd")
+const RoadSigns = preload("res://scripts/road_signs.gd")
 const Catalog = preload("res://scripts/catalog.gd")
 const World = preload("res://scripts/world_terrain.gd")
 const SIZE = World.SIZE # Centro de las partidas anteriores; no es un límite del mapa.
@@ -18,6 +19,10 @@ const TOOLS = [
 	{"id":"repair_route","label":"Arreglar vía","icon":"repair"},
 	{"id":"demolish_route","label":"Destruir vía","icon":"demolish"},
 	{"id":"fell_trees","label":"Talar árboles","icon":"tree"},
+	{"id":"remove_element","label":"Eliminar","icon":"remove"},
+	{"id":"undo_build","label":"Deshacer","icon":"undo"},
+	{"id":"upgrade_road","label":"Mejorar","icon":"upgrade"},
+	{"id":"open_services","label":"Servicios","icon":"network"},
 	{"id":"menu","label":"Menú","icon":"menu"}
 ]
 const ROAD_OPERATIONS = ["Construir", "Mejorar", "Reparar", "Cerrar", "Abrir"]
@@ -31,6 +36,9 @@ var city_connectors: Dictionary = {}
 var retired_city_cells: Dictionary = {}
 var roads: Dictionary = {}
 var road_nodes: Dictionary = {}
+var bridge_spans: Dictionary = {} # Extremos del tablero; la carretera inferior conserva sus casillas.
+var bridge_links: Dictionary = {}
+var bridge_decks: Dictionary = {}
 var road_revision = 0
 var cities: Array = []
 var city_cells: Dictionary = {}
@@ -45,6 +53,7 @@ var visuals
 var incidents
 var event_notices
 var traffic
+var signage = RoadSigns.new(self)
 var accounts
 var maintenance
 var navigator
@@ -168,9 +177,13 @@ func generate_world() -> void:
 	demolished_access_tiles.clear()
 	navigator.seed_value = -1
 	incidents.reset()
+	signage.reset()
 	traffic.reset()
 	roads.clear()
 	road_nodes.clear()
+	bridge_spans.clear()
+	bridge_links.clear()
+	bridge_decks.clear()
 	cities.clear()
 	city_serial = 0
 	city_cells.clear()
@@ -197,33 +210,76 @@ func generate_world() -> void:
 		incidents.rules.snow_chance=1.0
 
 func generate_initial_cities() -> void:
-	# Emplazamientos escalonados: permiten una región densa sin atascar un
-	# muestreo aleatorio por rechazo. Se barajan y priorizan praderas/bosques.
+	# Partir de una distribución densa deja espacio para la cantidad
+	# configurada. Luego se desplazan los centros antes de construir las vías.
 	var area = explored.bounds.grow(-16)
 	var spacing = MIN_CITY_DISTANCE+4
 	var row_step = ceili(spacing*sqrt(3.0)/2.0)
+	var midpoint = area.get_center()
+	var reach = ceili(Vector2(area.size).length()/2.0)+spacing
+	var angle = rng.randf_range(0.20,0.78)
+	var phase = Vector2i(rng.randi_range(0,spacing-1),rng.randi_range(0,row_step-1))
 	var candidates: Array[Vector2i] = []
 	var row = 0
-	for y in range(area.position.y+2,area.end.y-2,row_step):
-		for x in range(area.position.x+2+(spacing/2 if row%2 else 0),area.end.x-2,spacing):
-			candidates.append(Vector2i(x,y)+Vector2i(rng.randi_range(-1,1),rng.randi_range(-1,1)))
+	for y in range(-reach+phase.y,reach,row_step):
+		for x in range(-reach+phase.x+(spacing/2 if row%2 else 0),reach,spacing):
+			var p = midpoint+Vector2i(Vector2(x,y).rotated(angle).round())
+			if area.has_point(p): candidates.append(p)
 		row+=1
 	for i in range(candidates.size()-1,0,-1):
 		var j = rng.randi_range(0,i)
 		var swap = candidates[i]; candidates[i]=candidates[j]; candidates[j]=swap
+	var sites: Array[Vector2i] = []
+	for city in cities: sites.append(city.pos)
+	var starter_count = sites.size()
 	for pass_index in 2:
 		for p in candidates:
-			if cities.size()>=INITIAL_CITY_COUNT: return
+			if sites.size()>=INITIAL_CITY_COUNT: break
 			if pass_index==0 and terrain.sample_cell(p) not in [0,2]: continue
 			var valid = true
-			for city in cities:
-				if Vector2(p).distance_squared_to(Vector2(city.pos))<MIN_CITY_DISTANCE*MIN_CITY_DISTANCE: valid=false; break
+			for site in sites:
+				if p.distance_squared_to(site)<MIN_CITY_DISTANCE*MIN_CITY_DISTANCE:
+					valid = false
+					break
 			if not valid: continue
-			city_serial+=1
-			var names = ["Ribera", "Encinar", "Puertollano", "Santa Clara", "Villalba", "Las Lomas", "Buenavista", "Peñablanca", "Alameda"]
-			add_city(p,names[(city_serial-1)%names.size()]+(" "+str(city_serial) if city_serial>names.size() else ""),CityDesign.initial_radius(p,world_seed))
+			sites.append(p)
+	scatter_city_sites(sites,starter_count,area)
+	var names = ["Ribera", "Encinar", "Puertollano", "Santa Clara", "Villalba", "Las Lomas", "Buenavista", "Peñablanca", "Alameda"]
+	for i in range(starter_count,sites.size()):
+		var p = sites[i]
+		city_serial += 1
+		add_city(p,names[(city_serial-1)%names.size()]+(" "+str(city_serial) if city_serial>names.size() else ""),CityDesign.initial_radius(p,world_seed))
 	if cities.size()<INITIAL_CITY_COUNT:
 		push_warning("Solo caben %d de %d ciudades. Ajusta scripts/world_settings.gd."%[cities.size(),INITIAL_CITY_COUNT])
+
+func scatter_city_sites(sites: Array[Vector2i], fixed: int, area: Rect2i) -> void:
+	var origins = sites.duplicate()
+	var radius = maxi(1,roundi(MIN_CITY_DISTANCE*0.54))
+	var step = maxi(1,roundi(MIN_CITY_DISTANCE*0.18))
+	var reach = MIN_CITY_DISTANCE+radius*2
+	var neighbours: Array[PackedInt32Array] = []
+	var natural: Array[bool] = []
+	for i in range(fixed,sites.size()):
+		var nearby = PackedInt32Array()
+		for j in sites.size():
+			if j!=i and origins[i].distance_squared_to(origins[j])<reach*reach:
+				nearby.append(j)
+		neighbours.append(nearby)
+		natural.append(terrain.sample_cell(sites[i]) in [0,2])
+	for sweep in 64:
+		for i in range(fixed,sites.size()):
+			var p = sites[i]+Vector2i(rng.randi_range(-step,step),rng.randi_range(-step,step))
+			if not area.has_point(p) or p.distance_squared_to(origins[i])>radius*radius: continue
+			var free = true
+			for j in neighbours[i-fixed]:
+				if p.distance_squared_to(sites[j])<MIN_CITY_DISTANCE*MIN_CITY_DISTANCE:
+					free = false
+					break
+			if not free: continue
+			var passable = terrain.sample_cell(p) in [0,2]
+			if natural[i-fixed] and not passable: continue
+			sites[i] = p
+			natural[i-fixed] = passable
 
 func starting_city_center() -> Vector2i:
 	# Buscar terreno transitable natural para una primera conexión sin puentes ni montañas.
@@ -284,7 +340,7 @@ func append_streamed_city(pos: Vector2i, title: String) -> void:
 	if visuals.terrain_cache!=null: visuals.terrain_cache.append_city(added,index,previous_revision)
 	if visuals.road_layout_revision==previous_revision:
 		for p in added:
-			visuals.node_shapes[p]=visuals.Connections.shape_for(visuals.Connections.mask_for(p,roads,city_cells,city_connectors),roads[p].axis)
+			visuals.node_shapes[p]=visuals.road_shape(p)
 		visuals.road_layout_revision=road_revision
 	# Solo hay puntos nuevos y aislados; las rutas existentes siguen siendo válidas.
 	for p in added:
@@ -297,7 +353,7 @@ func append_streamed_city(pos: Vector2i, title: String) -> void:
 		if not graph.has_point(point_id(p)): continue
 		for d in DIRS:
 			var q = p+d
-			if graph.has_point(point_id(q)) and edge_allowed(p,q): graph.connect_points(point_id(p),point_id(q),false)
+			if graph.has_point(point_id(q)) and drive_edge(p,q): graph.connect_points(point_id(p),point_id(q),false)
 
 func ensure_city_accesses() -> void:
 	CityRoads.sync(self)
@@ -331,11 +387,90 @@ func refresh_city_connectors() -> void:
 			var score_b = (0 if b.dir==preferred else 100)+absi((b.gate-c.pos).x*preferred.y-(b.gate-c.pos).y*preferred.x)
 			return score_a<score_b)
 
+func is_bridge(p: Vector2i) -> bool:
+	return roads.has(p) and Catalog.ROADS[roads[p].kind].get("bridge",false)
+
+func surface_link(p: Vector2i, q: Vector2i) -> bool:
+	if not roads.has(p) or not roads.has(q): return false
+	var along_x = p.x!=q.x
+	if is_bridge(p) and not incidents.roundabout_cells.has(p) and (roads[p].axis!=along_x or bridge_decks.has(q)): return false
+	if is_bridge(q) and not incidents.roundabout_cells.has(q) and (roads[q].axis!=along_x or bridge_decks.has(p)): return false
+	return true
+
+func road_neighbours(p: Vector2i) -> Array:
+	var result: Array = []
+	for d in DIRS:
+		if surface_link(p,p+d): result.append(p+d)
+	result.append_array(bridge_links.get(p,[]))
+	return result
+
+func span_key(a: Vector2i, b: Vector2i) -> Vector4i:
+	if a.x>b.x or a.y>b.y: return Vector4i(b.x,b.y,a.x,a.y)
+	return Vector4i(a.x,a.y,b.x,b.y)
+
+func refresh_bridge_spans() -> void:
+	bridge_links.clear()
+	bridge_decks.clear()
+	for span in bridge_spans.keys():
+		var a = Vector2i(span.x,span.y)
+		var b = Vector2i(span.z,span.w)
+		var direction = (b-a).sign()
+		if (direction.x!=0 and direction.y!=0) or (b-a).length_squared()<4 or not is_bridge(a) or not is_bridge(b) or roads[a].axis!=(direction.x!=0) or roads[b].axis!=(direction.x!=0):
+			bridge_spans.erase(span)
+			continue
+		if not bridge_links.has(a): bridge_links[a]=[]
+		if not bridge_links.has(b): bridge_links[b]=[]
+		bridge_links[a].append(b)
+		bridge_links[b].append(a)
+		var p = a+direction
+		while p!=b:
+			bridge_decks[p]=span
+			p+=direction
+
+func restore_legacy_overpasses() -> void:
+	for p in roads:
+		if incidents.roundabout_cells.has(p): continue
+		for d in [Vector2i.RIGHT,Vector2i.DOWN]:
+			var a: Vector2i = p-d
+			var b: Vector2i = p+d
+			var axis: bool = d.x!=0
+			if not is_bridge(a) or not is_bridge(b) or roads[a].axis!=axis or roads[b].axis!=axis: continue
+			if incidents.roundabout_cells.has(a) or incidents.roundabout_cells.has(b): continue
+			var side = Vector2i.DOWN if axis else Vector2i.RIGHT
+			if not roads.has(p-side) or not roads.has(p+side) or is_bridge(p-side) or is_bridge(p+side): continue
+			var work = 0.0
+			if is_bridge(p):
+				if roads[p].axis!=axis: continue
+				var old: Dictionary = roads[p]
+				work = old.work
+				if old.closed: roads[a].closed=true
+				var lower: Dictionary = roads[p-side]
+				roads[p] = city_road(lower.kind,not axis)
+				roads[p].hp=minf(lower.hp,roads[p+side].hp)
+				roads[p].last_used=old.get("last_used",elapsed)
+				roads[p].player_modified=lower.get("player_modified",false) or roads[p+side].get("player_modified",false)
+				road_nodes[p]={"kind":lower.kind,"axis":not axis}
+			bridge_spans[span_key(a,b)]=work
+			break
+
 func edge_allowed(p: Vector2i, q: Vector2i) -> bool:
-	return roads.has(p) and roads.has(q) and incidents.edge_allows(p,q)
+	var delta = q-p
+	if delta.abs().x+delta.abs().y==1:
+		return surface_link(p,q) and incidents.edge_allows(p,q)
+	if not q in bridge_links.get(p,[]): return false
+	if float(bridge_spans.get(span_key(p,q),INF))>0: return false
+	var d = delta.sign()
+	var at = p+d
+	while at!=q:
+		if incidents.fire.has(at): return false
+		at+=d
+	return true
 
 func inside(p: Vector2i) -> bool:
 	return p != NO_CELL
+
+func drive_edge(p: Vector2i, q: Vector2i) -> bool:
+	return edge_allowed(p,q) and (not signage.has_movement_rules or signage.allows_edge(p,q))
 
 func ground(p: Vector2i) -> int:
 	return terrain.get_cell(p) if inside(p) else 3
@@ -361,22 +496,28 @@ func road_open(p: Vector2i) -> bool:
 
 func rebuild_graph() -> void:
 	refresh_city_connectors()
+	refresh_bridge_spans()
 	road_revision += 1
 	graph.clear()
 	graph.minimum_step_cost=INF
 	graph.junction_delays.clear()
+	graph.turn_rules.clear()
+	signage.rebuild()
+	graph.signage = signage
 	route_cache.clear()
 	for p in roads:
 		if road_open(p):
 			var cost = 1.0 / Catalog.ROADS[roads[p].kind].speed * (1.0 if road_nodes.has(p) else 2.5)
 			graph.add_point(point_id(p),Vector2(p),cost)
+			if signage.has_movement_rules and signage.placed.has(p):
+				var turns = signage.placed[p].filter(func(sign): return sign.id in RoadSigns.TURNS)
+				if not turns.is_empty(): graph.turn_rules[point_id(p)] = turns
 			if traffic.junctions.uncontrolled(p): graph.junction_delays[point_id(p)]=WorldSettings.JUNCTION_STOP_TIME
 			graph.minimum_step_cost=minf(graph.minimum_step_cost,cost)
 	for id in graph.get_point_ids():
 		var p = Vector2i(graph.get_point_position(id))
-		for d in DIRS:
-			var q = p + d
-			if inside(q) and graph.has_point(point_id(q)) and edge_allowed(p, q):
+		for q in road_neighbours(p):
+			if inside(q) and graph.has_point(point_id(q)) and drive_edge(p,q):
 				if not graph.are_points_connected(id, point_id(q), false): graph.connect_points(id, point_id(q), false)
 	graph_dirty = false
 	traffic.refresh_connections()
@@ -465,6 +606,9 @@ func _process(delta: float) -> void:
 func update_roads(dt: float) -> void:
 	for p in roads:
 		var r = roads[p]
+		if r.has("urban_city"):
+			r.hp = 100.0
+			continue
 		if incidents.fire.has(p): continue
 		if r.work > 0:
 			r.work = maxf(0, r.work - dt)
@@ -474,6 +618,10 @@ func update_roads(dt: float) -> void:
 				graph_dirty = true
 		elif not r.closed:
 			r.hp = maxf(minf(r.hp,WorldSettings.ROAD_MIN_HEALTH), r.hp - dt * WorldSettings.ROAD_PASSIVE_WEAR)
+	for span in bridge_spans:
+		if bridge_spans[span]<=0: continue
+		bridge_spans[span]=maxf(0,bridge_spans[span]-dt)
+		if bridge_spans[span]==0: graph_dirty=true
 
 func spawn_trips() -> void:
 	traffic.spawn_demand()
@@ -516,28 +664,12 @@ func explore_around(at: Vector2, background: bool = false) -> void:
 	navigator.changed()
 
 func populate_region(key: Vector2i) -> void:
-	var random = RandomNumberGenerator.new()
-	random.seed = world_seed+key.x*73856093+key.y*19349663
-	# Una cuadrícula con variación mantiene la separación incluso entre regiones vecinas.
-	var grid = maxi(1,WorldSettings.EXPLORATION_CITY_GRID)
-	for y in grid:
-		for x in grid:
-			var site = key*Extent.REGION+Vector2i(roundi((x+.5)*Extent.REGION/float(grid)),roundi((y+.5)*Extent.REGION/float(grid)))
-			for attempt in WorldSettings.EXPLORATION_CITY_ATTEMPTS:
-				var pos = site+Vector2i(random.randi_range(-WorldSettings.EXPLORATION_CITY_JITTER,WorldSettings.EXPLORATION_CITY_JITTER),random.randi_range(-WorldSettings.EXPLORATION_CITY_JITTER,WorldSettings.EXPLORATION_CITY_JITTER))
-				if terrain.sample_cell(pos) not in [0,2]: continue
-				var free = true
-				for city in cities:
-					if Vector2(pos).distance_squared_to(Vector2(city.pos))<MIN_CITY_DISTANCE*MIN_CITY_DISTANCE: free=false; break
-				if not free: continue
-				for dy in range(-5,6):
-					for dx in range(-5,6):
-						if roads.has(pos+Vector2i(dx,dy)): free=false; break
-					if not free: break
-				if not free: continue
-				city_serial += 1
-				add_city(pos,"Villa "+str(city_serial),CityDesign.initial_radius(pos,world_seed))
-				break
+	var job = world_stream.region_job(key)
+	while job.site<WorldSettings.EXPLORATION_CITY_COUNT:
+		var pos: Vector2i = world_stream.next_site(job)
+		if pos==NO_CELL: continue
+		city_serial += 1
+		add_city(pos,"Villa "+str(city_serial),CityDesign.initial_radius(pos,world_seed))
 
 func spawn_city(announce: bool = true) -> bool:
 	if cities.size() >= MAX_CITIES: return false
@@ -596,6 +728,9 @@ func apply_action() -> void:
 		"build_road":
 			if construction_mode == "roundabout": build_roundabout(); return
 			if construction_mode == "signal": install_signal(); return
+			if construction_mode.begins_with("sign:"):
+				signage.place(cursor,construction_mode.trim_prefix("sign:"))
+				return
 			if anchor == NO_CELL:
 				anchor = cursor
 				tell("Inicio del tramo fijado · Mueve la selección y pulsa A / Enter para construir")
@@ -603,10 +738,92 @@ func apply_action() -> void:
 				tell("Selecciona otro extremo: las carreteras se construyen por tramos")
 			else: apply_road_operation(0)
 		"close_route": toggle_route()
-		"repair_route": apply_road_operation(2)
+		"repair_route":
+			if incidents.roundabout_cells.has(cursor) and anchor == NO_CELL:
+				services.repair(route_cells(cursor),false)
+			elif anchor == NO_CELL:
+				if not roads.has(cursor): tell("Selecciona una carretera para iniciar el tramo."); return
+				anchor = cursor
+				tell("Inicio del tramo fijado · Elige el otro extremo para reparar")
+			else:
+				var targets = line_cells(anchor,cursor)
+				for p in targets:
+					if not roads.has(p) or incidents.roundabout_cells.has(p):
+						tell("El tramo debe seguir una carretera continua; selecciona las rotondas por separado."); return
+				if services.repair(targets,false): anchor = NO_CELL
 		"demolish_route": maintenance.demolition(cursor)
 		"fell_trees": maintenance.logging(cursor)
+		"remove_element": remove_element_at_cursor()
+		"undo_build": services.undo_build()
+		"upgrade_road": upgrade_current()
+		"open_services":
+			gameplay_ui.tab=0
+			open_panel("network")
 		"menu": open_menu()
+
+func remove_element_at_cursor() -> void:
+	var removed: Array[String] = []
+	if signage.placed.has(cursor):
+		signage.placed.erase(cursor)
+		removed.append("señales")
+	if incidents.signals.has(cursor):
+		incidents.signals.erase(cursor)
+		removed.append("semáforo")
+	if removed.is_empty():
+		tell("No hay señales ni semáforos que eliminar en esta casilla.")
+		return
+	graph_dirty = true
+	var message = "Eliminado: "
+	for i in removed.size():
+		if i>0: message += " y "
+		message += removed[i]
+	tell(message+" · La carretera permanece intacta")
+
+func bridge_build_plan(cells: Array, axes: Dictionary, bridge: bool) -> Dictionary:
+	var spans: Dictionary = {}
+	var crossed: Dictionary = {}
+	var replace: Dictionary = {}
+	var first = -1
+	if bridge and cells[0].x!=cells[-1].x and cells[0].y!=cells[-1].y:
+		return {"error":"Construye el puente como un tramo recto."}
+	for i in cells.size():
+		var p: Vector2i = cells[i]
+		var axis: bool = axes[p]
+		if bridge_decks.has(p):
+			var span: Vector4i = bridge_decks[p]
+			if axis==(span.x!=span.z) and bridge:
+				crossed[p]=false # El tablero ya existe.
+			elif axis==(span.x!=span.z) or bridge:
+				return {"error":"Este paso elevado solo admite una carretera perpendicular por debajo."}
+		if bridge:
+			if is_bridge(p) and roads[p].axis!=axis:
+				return {"error":"Los puentes no pueden cruzarse al mismo nivel."}
+			var side = Vector2i.DOWN if axis else Vector2i.RIGHT
+			if not crossed.has(p) and roads.has(p) and not is_bridge(p) and (roads[p].axis!=axis or surface_link(p,p+side) or surface_link(p,p-side)):
+				if first<0: first=i
+				crossed[p]=true
+				continue
+			if first<0: continue
+			if first==0:
+				return {"error":"Deja una casilla de puente a cada lado de la carretera."}
+			var a: Vector2i = cells[first-1]
+			for end in [a,p]:
+				if crossed.has(end) or (roads.has(end) and not is_bridge(end)) or (not roads.has(end) and city_at(end)>=0):
+					return {"error":"Deja una casilla de puente libre a cada lado de la carretera."}
+			spans[span_key(a,p)]=true
+			first=-1
+		elif is_bridge(p) and roads[p].axis!=axis:
+			var d = Vector2i.RIGHT if roads[p].axis else Vector2i.DOWN
+			var a = p-d
+			var b = p+d
+			if i==0 or i==cells.size()-1 or axes[cells[i-1]]!=axis or axes[cells[i+1]]!=axis or not is_bridge(a) or not is_bridge(b) or roads[a].axis!=roads[p].axis or roads[b].axis!=roads[p].axis or bridge_links.has(p):
+				return {"error":"El paso inferior necesita un tramo recto y puente a ambos lados."}
+			if roads[p].closed or roads[p].work>0 or density.get(p,0)>0:
+				return {"error":"Espera a que el puente esté abierto, terminado y libre de tráfico."}
+			spans[span_key(a,b)]=false
+			replace[p]=true
+	if first>=0: return {"error":"Deja una casilla de puente a cada lado de la carretera."}
+	return {"error":"","spans":spans,"crossed":crossed,"replace":replace}
 
 func apply_road_operation(operation: int) -> void:
 	var centers = line_cells(anchor, cursor) if anchor != NO_CELL else [cursor]
@@ -622,9 +839,18 @@ func apply_road_operation(operation: int) -> void:
 	if operation >= 2 and roads.has(cursor): width = Catalog.ROADS[roads[cursor].kind].w
 	var axes = footprint_axes(centers, width)
 	var cells = axes.keys()
+	var plan = {"spans":{},"crossed":{},"replace":{}}
+	if operation==0:
+		refresh_bridge_spans()
+		plan = bridge_build_plan(cells,axes,spec.get("bridge",false))
+		if plan.error!="": tell(plan.error); return
 	var targets: Array = []
 	var cost = 0.0
+	var bridge_operation = operation>0 and is_bridge(centers[0]) and is_bridge(centers[-1])
 	for p in cells:
+		if bridge_operation and bridge_decks.has(p):
+			var span: Vector4i = bridge_decks[p]
+			if axes[p]==(span.x!=span.z): continue
 		if incidents.fire.has(p) and operation in [0,1,2,4]: tell("Apaga el incendio antes de construir, reparar o reabrir la vía."); return
 		if services.service_jobs.has(p): tell("Espera a que termine el mantenimiento del tramo."); return
 		if not inside(p): return
@@ -632,10 +858,13 @@ func apply_road_operation(operation: int) -> void:
 		if city_at(p)>=0 and not CityDesign.is_street(cities[city_at(p)],p-cities[city_at(p)].pos) and not roads.has(p): continue
 		if operation <= 1:
 			if ground(p) == 3 or ground(p) == 4:
-				tell("Las montañas y roquedos bloquean este trazado."); return
+				tell("Las montañas bloquean este trazado."); return
 			if ground(p) == 1 and not spec.get("bridge", false):
 				tell("Para cruzar el río selecciona un puente en el catálogo."); return
-			if operation == 0 and roads.has(p): continue
+			if plan.crossed.has(p):
+				if plan.crossed[p]: cost+=float(spec.cost)
+				continue
+			if operation == 0 and roads.has(p) and not plan.replace.has(p): continue
 			if operation == 1 and roads.has(p):
 				if not roads[p].closed or roads[p].work > 0:
 					tell("Cierra todo el tramo y espera las obras antes de mejorarlo."); return
@@ -650,7 +879,7 @@ func apply_road_operation(operation: int) -> void:
 				cost += float(Catalog.ROADS[r.kind].cost) / Catalog.ROADS[r.kind].w * WorldSettings.REPAIR_COST_RATIO
 			if operation == 4 and r.work > 0: tell("No se puede abrir una carretera en obras."); return
 			targets.append(p)
-	if targets.is_empty(): tell("No hay casillas válidas para esta acción."); return
+	if targets.is_empty() and plan.spans.is_empty(): tell("No hay casillas válidas para esta acción."); return
 	if money < cost: tell("Fondos insuficientes. Coste: " + cash(cost)); return
 	var undo_before: Dictionary = {}
 	if operation == 0:
@@ -658,11 +887,13 @@ func apply_road_operation(operation: int) -> void:
 			if roads.has(p): undo_before[p]={"road":roads[p].duplicate(true),"node":road_nodes.get(p,{}).duplicate(true)}
 	else: services.invalidate_undo(targets)
 	if operation in [0,1,2]: gameplay.begin_review(ROAD_OPERATIONS[operation]+" carretera")
-	transact(-cost,"construction" if operation == 0 else ("upgrades" if operation == 1 else "repairs"),ROAD_OPERATIONS[operation]+" · "+str(targets.size())+" casillas")
+	var affected_cells = targets.size()+plan.crossed.values().count(true)
+	transact(-cost,"construction" if operation == 0 else ("upgrades" if operation == 1 else "repairs"),ROAD_OPERATIONS[operation]+" · "+str(affected_cells)+" casillas")
 	for p in targets:
 		if operation <= 1:
 			var owner = roads[p].get("access_city", -1) if roads.has(p) else access_owner(p)
-			roads[p] = {"kind":kind, "hp":100.0, "closed":operation == 1, "work":float(spec.time), "total":float(spec.time), "axis":axes[p], "last_used":elapsed}
+			var axis = roads[p].axis if operation==1 and is_bridge(p) else axes[p]
+			roads[p] = {"kind":kind, "hp":100.0, "closed":operation == 1, "work":float(spec.time), "total":float(spec.time), "axis":axis, "last_used":elapsed}
 			if owner >= 0: roads[p].access_city = owner
 			if city_at(p)>=0: roads[p].urban_city=city_at(p)
 			demolished_access_tiles.erase(p)
@@ -673,14 +904,16 @@ func apply_road_operation(operation: int) -> void:
 			roads[p].closed = operation == 3
 		roads[p].player_modified=true
 	if operation <= 1:
-		for center in centers:
+		for center in targets:
 			if roads.has(center):
-				road_nodes[center] = {"kind":roads[center].kind, "axis":axes.get(center, horizontal)}
-	if operation == 0: services.record_build(targets,undo_before,cost)
+				road_nodes[center] = {"kind":roads[center].kind, "axis":roads[center].axis}
+	if operation == 0:
+		for span in plan.spans: bridge_spans[span]=float(spec.time) if plan.spans[span] else 0.0
+		services.record_build(targets,undo_before,cost,NO_CELL,plan.spans.keys())
 	if operation == 1 and incidents.roundabout_cells.has(cursor): incidents.roundabouts[incidents.roundabout_cells[cursor]].kind = kind
 	graph_dirty = true
 	anchor = NO_CELL
-	tell(ROAD_OPERATIONS[operation] + " · " + str(targets.size()) + " casillas" + (" · " + cash(cost) if cost > 0 else ""))
+	tell(ROAD_OPERATIONS[operation] + " · " + str(affected_cells) + " casillas" + (" · " + cash(cost) if cost > 0 else ""))
 
 func route_cells(p: Vector2i) -> Array:
 	return incidents.ring_cells(incidents.roundabout_cells[p]) if incidents.roundabout_cells.has(p) else [p]
@@ -716,7 +949,7 @@ func cash(value: float) -> String:
 func save_game(message: bool = true) -> void:
 	var file = FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null: tell("No se pudo guardar la partida."); return
-	file.store_var({"version":2,"streaming":world_stream.snapshot(),"road_update_clock":road_update_clock, "roads":roads, "road_nodes":road_nodes, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"pause_speed_index":pause_speed_index,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
+	file.store_var({"version":2,"streaming":world_stream.snapshot(),"road_update_clock":road_update_clock, "roads":roads, "road_nodes":road_nodes, "bridge_spans":bridge_spans, "cities":cities, "money":money, "earned":earned, "trips":trips, "elapsed":elapsed, "cursor":cursor, "seed":world_seed, "city_serial":city_serial, "terrain":terrain.snapshot(), "explored":explored.snapshot(), "rng":rng.state, "growth_clock":growth_clock, "demand_clock":demand_clock, "tile":zoom_target, "kind":kind, "tool":tool, "speed_index":speed_index, "incidents":incidents.snapshot(), "signage":signage.snapshot(), "traffic":traffic.snapshot(), "accounts":accounts.snapshot(), "maintenance":maintenance.snapshot(), "demolished_access_tiles":demolished_access_tiles, "tool_id":TOOLS[tool].id, "last_world_tool_id":TOOLS[last_world_tool].id,"construction_mode":construction_mode,"pause_speed_index":pause_speed_index,"gameplay":gameplay.snapshot(),"services":services.snapshot()})
 	if message: tell("Partida guardada.")
 
 func load_game() -> bool:
@@ -731,6 +964,7 @@ func load_game() -> bool:
 	explored.restore(data.get("explored",{}))
 	demolished_access_tiles = data.get("demolished_access_tiles",{})
 	road_nodes = data.get("road_nodes", {})
+	bridge_spans = data.get("bridge_spans",{})
 	if road_nodes.is_empty() and not roads.is_empty(): restore_road_nodes()
 	cities = data.cities
 	world_seed = data.seed
@@ -745,7 +979,11 @@ func load_game() -> bool:
 	terrain.restore(data.terrain)
 	terrain.enable_frontier_lakes(explored.regions)
 	incidents.restore(data.get("incidents", {}))
+	signage.restore(data.get("signage",{}))
+	var legacy_overpasses = not data.has("bridge_spans")
+	if legacy_overpasses: restore_legacy_overpasses()
 	ensure_city_accesses()
+	refresh_bridge_spans()
 	maintenance.restore(data.get("maintenance",{}))
 	if data.has("accounts"): accounts.restore(data.accounts)
 	else: accounts.legacy_balance(earned,incidents.accident_losses,money,elapsed)
@@ -772,11 +1010,11 @@ func load_game() -> bool:
 	if TOOLS[tool].id == "menu": tool = last_world_tool
 	anchor = NO_CELL
 	construction_mode = data.get("construction_mode","road")
-	if not construction_mode in ["road","roundabout","signal"]: construction_mode = "road"
+	if not construction_mode in ["road","roundabout","signal"] and not (construction_mode.begins_with("sign:") and not RoadSigns.definition(construction_mode.trim_prefix("sign:")).is_empty()): construction_mode = "road"
 	navigator.seed_value = -1
 	speed_index = data.get("speed_index", 1)
 	pause_speed_index = clampi(data.get("pause_speed_index",maxi(1,speed_index)),1,SPEEDS.size()-1)
-	traffic.restore(data.get("traffic", {}))
+	traffic.restore(data.get("traffic", {}),legacy_overpasses)
 	services.restore(data.get("services",{}))
 	gameplay.restore(data.get("gameplay",{}))
 	graph_dirty = true
@@ -975,7 +1213,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_ENTER,KEY_E: apply_action()
 			KEY_Q: cycle_world_tool(-1)
 			KEY_TAB: cycle_world_tool(1)
-			KEY_R,KEY_X: if TOOLS[tool].id == "build_road": horizontal = not horizontal
+			KEY_R,KEY_X: if TOOLS[tool].id == "build_road": rotate_construction()
 			KEY_V,KEY_Y: open_road_selector()
 			KEY_H: open_panel("help")
 			KEY_I: open_panel("info")
@@ -991,7 +1229,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_O: select_tool(0); construction_mode = "roundabout"; tell("Rotonda · 3 × 3 casillas")
 			KEY_T: install_signal()
 			KEY_P: select_tool(0); construction_mode = "road"
-			KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6: select_tool(event.physical_keycode-KEY_1)
+			KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7: select_tool(event.physical_keycode-KEY_1)
+			KEY_8: open_menu()
 
 func cycle_world_tool(direction: int) -> void:
 	# Menú es una acción explícita, nunca un paso del ciclo de herramientas.
@@ -1023,6 +1262,11 @@ func cycle_speed() -> void:
 
 func toggle_anchor() -> void:
 	anchor = cursor if anchor == NO_CELL else NO_CELL
+
+func rotate_construction() -> void:
+	if construction_mode.begins_with("sign:"): signage.rotate()
+	elif construction_mode=="signal": tell("El semáforo controla ambos ejes y no necesita girarse.")
+	else: horizontal = not horizontal
 
 func ui_action(action: String) -> void:
 	if not menu_focus.available(action):
@@ -1076,7 +1320,7 @@ func ui_action(action: String) -> void:
 			"account_next": account_scroll += 6
 			"zoom_in": zoom_control(1.25)
 			"zoom_out": zoom_control(1.0/1.25)
-			"rotate": horizontal = not horizontal
+			"rotate": rotate_construction()
 			"anchor": apply_action()
 			"upgrade": upgrade_current()
 			"alert": focus_alert(); close_panels()
@@ -1087,7 +1331,7 @@ func ui_action(action: String) -> void:
 func select_tool(index: int) -> void:
 	index = posmod(index,TOOLS.size())
 	if TOOLS[index].id == "menu": open_menu(); return
-	if TOOLS[index].id != "build_road": anchor = NO_CELL
+	if index != tool: anchor = NO_CELL
 	tool = index
 	last_world_tool = index
 	panel = ""
@@ -1251,9 +1495,11 @@ func build_roundabout() -> void:
 	var cells: Array = []
 	var spec = Catalog.ROADS[kind]
 	if not gameplay.unlocked(kind): tell("Esta carretera requiere completar contratos."); return
+	if spec.get("bridge",false): tell("Selecciona una carretera para la rotonda."); return
 	for y in range(-1, 2):
 		for x in range(-1, 2):
 			var p = center + Vector2i(x, y)
+			if is_bridge(p) or bridge_decks.has(p): tell("La rotonda necesita espacio fuera del puente."); return
 			if incidents.fire.has(p): tell("Apaga el incendio antes de construir la rotonda."); return
 			if not inside(p) or city_at(p) >= 0 or incidents.protected_access(p) or incidents.roundabout_cells.has(p):
 				tell("La rotonda necesita 3 × 3 casillas libres de ciudades, accesos y otras rotondas."); return
@@ -1273,6 +1519,7 @@ func build_roundabout() -> void:
 	for p in cells:
 		incidents.roundabout_cells[p] = center
 		incidents.signals.erase(p)
+		signage.placed.erase(p)
 		roads.erase(p)
 		road_nodes.erase(p)
 	for p in incidents.ring_cells(center):
@@ -1285,6 +1532,7 @@ func build_roundabout() -> void:
 	tell("Rotonda en construcción · 3 × 3 casillas · " + cash(cost))
 
 func install_signal() -> void:
+	if is_bridge(cursor): tell("Coloca el semáforo fuera del puente."); return
 	if incidents.signals.has(cursor): panel = "signal"; return
 	if not roads.has(cursor) or incidents.roundabout_cells.has(cursor):
 		tell("Coloca el semáforo sobre una carretera que no sea una rotonda."); return

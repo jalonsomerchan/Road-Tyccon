@@ -13,30 +13,38 @@ func reset() -> void:
 	jobs.clear();completed = 0
 
 func enqueue(keys: Array) -> void:
-	for key in keys:
-		random.seed = g.world_seed+key.x*73856093+key.y*19349663
-		jobs.append({"key":key,"site":0,"attempt":0,"random":random.state})
+	for key in keys: jobs.append(region_job(key))
+
+func region_job(key: Vector2i) -> Dictionary:
+	random.seed = g.world_seed+key.x*73856093+key.y*19349663
+	return {"key":key,"site":0,"attempt":0,"random":random.state}
 
 func update(budget: int = BUDGET_USEC) -> void:
 	if jobs.is_empty() or g.graph_dirty: return
 	var deadline = Time.get_ticks_usec()+budget
-	var grid = maxi(1,Settings.EXPLORATION_CITY_GRID)
 	while not jobs.is_empty() and Time.get_ticks_usec()<deadline:
 		var job = jobs[0]
-		if job.site>=grid*grid:
+		if job.site>=Settings.EXPLORATION_CITY_COUNT:
 			jobs.pop_front();completed += 1
 			continue
-		random.state = job.random
-		var site = job.key*g.Extent.REGION+Vector2i(roundi((job.site%grid+.5)*g.Extent.REGION/float(grid)),roundi((int(job.site/grid)+.5)*g.Extent.REGION/float(grid)))
-		var pos = site+Vector2i(random.randi_range(-Settings.EXPLORATION_CITY_JITTER,Settings.EXPLORATION_CITY_JITTER),random.randi_range(-Settings.EXPLORATION_CITY_JITTER,Settings.EXPLORATION_CITY_JITTER))
-		job.random = random.state
-		job.attempt += 1
-		if available(pos):
-			g.city_serial += 1
-			g.append_streamed_city(pos,"Villa "+str(g.city_serial))
-			job.site += 1;job.attempt = 0
-		elif job.attempt>=Settings.EXPLORATION_CITY_ATTEMPTS:
-			job.site += 1;job.attempt = 0
+		var pos = next_site(job)
+		if pos==g.NO_CELL: continue
+		g.city_serial += 1
+		g.append_streamed_city(pos,"Villa "+str(g.city_serial))
+
+func next_site(job: Dictionary) -> Vector2i:
+	random.state = job.random
+	# Mantener la parcela dentro de la región que originó el trabajo.
+	var margin = Settings.CITY_MAX_RADIUS+5
+	var limit = g.Extent.REGION-1-margin
+	var pos = job.key*g.Extent.REGION+Vector2i(random.randi_range(margin,limit),random.randi_range(margin,limit))
+	job.random = random.state
+	var valid = available(pos)
+	job.attempt += 1
+	if valid or job.attempt>=Settings.EXPLORATION_CITY_ATTEMPTS:
+		job.site += 1
+		job.attempt = 0
+	return pos if valid else g.NO_CELL
 
 func available(pos: Vector2i) -> bool:
 	if g.terrain.sample_cell(pos) not in [0,2]: return false

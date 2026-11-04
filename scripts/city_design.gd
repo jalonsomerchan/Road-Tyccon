@@ -1,10 +1,19 @@
 extends RefCounted
 ## Plano urbano determinista: las calles del plano son carreteras reales.
 const Settings = preload("res://scripts/world_settings.gd")
-const BUILDINGS = ["villa","slate_house","timber_house","apartment","brick_block","warehouse","civic","park"]
+const HOUSES = ["ochre_cottage","farmhouse","slate_cottage","courtyard_house","timber_cottage","sage_cottage","duplex","stone_house"]
+const URBAN_BUILDINGS = ["brick_apartments","glass_offices","mansard_apartments","terraced_block","courtyard_block","mixed_use","warehouse","converted_mill"]
+# Índices de los grupos y equipamientos en el atlas.
+enum { VILLAGE_HALL = 8, FIRST_URBAN, CITY_HALL = 17, PARK }
+const BUILDINGS = HOUSES+["village_hall"]+URBAN_BUILDINGS+["city_hall","park"]
+const URBAN_RADIUS = 4
 const STYLES = ["Villa mediterránea","Ciudad jardín","Centro urbano","Barrio industrial"]
-const PALETTES = [[0,0,0,4,2],[1,1,2,0],[3,3,4,1],[5,5,4,0]]
+const VILLAGE_PALETTES = [[0,1,3,5,6],[1,2,4,5,7],[0,2,3,6,7],[0,1,4,6,7]]
+const URBAN_PALETTES = [[0,2,3,4,5],[1,2,3,4,5],[0,1,2,3,4,5,7],[0,1,5,6,7]]
 const DIRECTIONS = [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]
+
+static func is_urban(city: Dictionary) -> bool:
+	return city.radius>=URBAN_RADIUS
 
 static func ensure(city: Dictionary, index: int, world_seed: int) -> void:
 	if not city.has("design_seed"):
@@ -83,16 +92,19 @@ static func cell(city: Dictionary, p: Vector2i) -> Dictionary:
 		if hash_value%100<22:
 			return {"role":"garden","sprite":6+hash_value%3,"turns":0,"scale":0.58,"offset":Vector2.ZERO}
 		return {"role":"vacant","sprite":0,"turns":0,"scale":0.0,"offset":Vector2.ZERO}
-	if p==Vector2i(1,1): return {"role":"civic","sprite":6,"turns":0,"scale":0.86,"offset":Vector2.ZERO}
+	var urban = is_urban(city)
+	if p==Vector2i(1,1):
+		return {"role":"civic","sprite":CITY_HALL if urban else VILLAGE_HALL,"turns":0,"scale":0.93,"offset":Vector2.ZERO}
 	var green = [18,38,8,24][style]+int(city.get("design_variant",0))*3
 	if hash_value%100<green:
 		if hash_value%7!=0:
 			return {"role":"garden","sprite":6+hash_value%3,"turns":0,"scale":0.48+float(hash_value%5)*0.025,"offset":Vector2.ZERO}
-		return {"role":"park","sprite":7,"turns":int(hash_value/11)%4,"scale":0.88,"offset":Vector2.ZERO}
-	var choices: Array = PALETTES[style]
-	var scale = [0.84,0.77,0.94,0.89][style]+float(hash_value%7)*0.006
-	var shift = Vector2((hash_value%3)-1,(int(hash_value/3)%3)-1)*0.035
-	return {"role":"building","sprite":choices[int(hash_value/101)%choices.size()],"turns":int(hash_value/17)%4,"scale":scale,"offset":shift}
+		return {"role":"park","sprite":PARK,"turns":int(hash_value/11)%4,"scale":0.88,"offset":Vector2.ZERO}
+	var choices: Array = URBAN_PALETTES[style] if urban else VILLAGE_PALETTES[style]
+	var sprite_index = choices[int(hash_value/101)%choices.size()]+(FIRST_URBAN if urban else 0)
+	var scale = (0.93 if urban else 0.79)+float(hash_value%7)*0.008
+	var shift = Vector2((hash_value%3)-1,(int(hash_value/3)%3)-1)*0.022
+	return {"role":"building","sprite":sprite_index,"turns":0,"scale":scale,"offset":shift}
 
 static func street_kind(city: Dictionary, p: Vector2i) -> int:
 	return Settings.AVENUE_ROAD_KIND if city.radius>=Settings.AVENUE_MIN_CITY_RADIUS and int(city.get("design_style",0))!=1 and local_cell(city,p).y==0 else Settings.RESIDENTIAL_ROAD_KIND

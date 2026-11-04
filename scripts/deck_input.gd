@@ -116,7 +116,7 @@ func button(index: int) -> void:
 			else: g.panel_secondary(true)
 		JOY_BUTTON_X:
 			if not g.panel.is_empty(): g.panel_secondary(false)
-			elif g.TOOLS[g.tool].id=="build_road": g.horizontal=not g.horizontal
+			elif g.TOOLS[g.tool].id=="build_road": g.rotate_construction()
 			elif g.TOOLS[g.tool].id=="repair_route": g.upgrade_current()
 		JOY_BUTTON_RIGHT_STICK: if g.panel.is_empty(): g.focus_next_city()
 
@@ -147,7 +147,7 @@ func duplicate_alias(event: InputEvent) -> bool:
 		if code in [KEY_ENTER,KEY_KP_ENTER,KEY_E]: candidates=[JOY_BUTTON_A]
 		elif code==KEY_ESCAPE: candidates=[JOY_BUTTON_B,JOY_BUTTON_START,JOY_BUTTON_BACK]
 		elif code==KEY_B: candidates=[JOY_BUTTON_B]
-		elif code in [KEY_F10,KEY_6]: candidates=[JOY_BUTTON_START]
+		elif code in [KEY_F10,KEY_8]: candidates=[JOY_BUTTON_START]
 		elif code in [KEY_X,KEY_R]: candidates=[JOY_BUTTON_X]
 		elif code in [KEY_Y,KEY_V]: candidates=[JOY_BUTTON_Y]
 		elif code==KEY_Q: candidates=[JOY_BUTTON_LEFT_SHOULDER]

@@ -13,8 +13,7 @@ const MIN_CITY_DISTANCE = 100 # Distancia mínima entre centros, también al exp
 const START_CITY_DISTANCE = 100 # Pareja inicial; al menos MIN_CITY_DISTANCE.
 const RANDOM_WORLD_SEED = true # false: todas las partidas nuevas usan WORLD_SEED.
 const WORLD_SEED = 42193
-const EXPLORATION_CITY_GRID = 7 # 7 → hasta 49 emplazamientos por región nueva.
-const EXPLORATION_CITY_JITTER = 20 # Variación ±casillas de cada emplazamiento.
+const EXPLORATION_CITY_COUNT = 49 # Máximo de poblaciones por región nueva.
 const EXPLORATION_CITY_ATTEMPTS = 24 # Intentos de buscar terreno por emplazamiento.
 ## Cambiar estos parámetros no modifica el terreno de partidas ya guardadas.
 ## Umbrales de ruido entre -1 y 1: bajar forest_threshold genera más bosques;
@@ -37,7 +36,7 @@ const TERRAIN = {
 # CIUDADES Y CRECIMIENTO
 const START_CITY_RADIUS = 4 # Radio en casillas: lado = 2 × radio + 1.
 const NEW_CITY_RADIUS = 3
-const CITY_RADIUS_VARIATION = 1 # Las nuevas poblaciones varían ±una casilla de radio.
+const CITY_RADIUS_VARIATION = 10 # Las nuevas poblaciones varían ±una casilla de radio.
 const CITY_STREET_BLOCK_SPACING = 3 # Al menos 3: dos parcelas entre calles paralelas.
 const CITY_ACCESS_LENGTH = 3 # Casillas de prolongación exterior de cada salida.
 const RESIDENTIAL_ROAD_KIND = 19 # Índices de scripts/catalog.gd: calle residencial.
@@ -46,7 +45,7 @@ const AVENUE_MIN_CITY_RADIUS = 3
 const CITY_BASE_POPULATION = 340
 const POPULATION_PER_RADIUS = 700
 const CITY_MIN_POPULATION = 160
-const CITY_MAX_RADIUS = 5
+const CITY_MAX_RADIUS = 20
 const CITY_GROWTH_INTERVAL = 60.0
 const CITY_BASE_GROWTH = 15 # Habitantes por actualización.
 const CITY_GROWTH_PER_TRIP = 3 # Habitantes extra por viaje recibido.
@@ -73,8 +72,8 @@ const TRIP_MIN_TIME_MULTIPLIER = 0.15 # Viajes lentos: fracción mínima del ing
 const TRIP_MAX_TIME_MULTIPLIER = 2.5 # Tope para viajes rápidos.
 
 # CONSERVACIÓN Y OBRAS (precios/velocidades/capacidad de cada vía: catalog.gd)
-const ROAD_PASSIVE_WEAR = 0.08 # Puntos de conservación por segundo abierta.
-const ROAD_TRAFFIC_WEAR = 0.14 # Puntos por coche y segundo sobre la casilla.
+const ROAD_PASSIVE_WEAR = 0.001 # Puntos de conservación por segundo abierta.
+const ROAD_TRAFFIC_WEAR = 0.01 # Puntos por coche y segundo sobre la casilla.
 const ROAD_MIN_HEALTH = 5.0
 const UPGRADE_COST_RATIO = 0.75 # Fracción del precio de la nueva vía.
 const REPAIR_COST_RATIO = 0.25 # Fracción del precio de construcción.
@@ -90,7 +89,8 @@ const SIGNAL_EW_GREEN = 10.0
 # ACCIDENTES (los riesgos se suman, con máximo del 100 %)
 const ACCIDENT_INTERVAL = 30.0
 const ACCIDENT_COST = 100.0
-const ACCIDENT_STOP = 15.0
+const ACCIDENT_STOP = 2.0
+const JUNCTION_COLLISION_RISK = 0.18 # Riesgo base por encuentro simultáneo, ajustado por velocidad y proximidad.
 const FIRE_ACCIDENT_RISK = 0.30
 const SNOW_ACCIDENT_RISK = 0.30
 const DAMAGED_ACCIDENT_RISK = 0.05 # Conservación inferior al 75 %.
@@ -128,7 +128,7 @@ static func validate() -> void:
 	assert(MIN_ZOOM>0 and MIN_ZOOM<=MAX_ZOOM,"Revisa los límites del zoom")
 	assert(INITIAL_SIDE>=1024 and INITIAL_SIDE%1024==0,"INITIAL_SIDE: múltiplo de 1024 y al menos 1024")
 	assert(INITIAL_CITY_COUNT>=2 and MIN_CITY_DISTANCE>0 and START_CITY_DISTANCE>=MIN_CITY_DISTANCE,"Revisa cantidad y separación de ciudades")
-	assert(EXPLORATION_CITY_GRID>0 and EXPLORATION_CITY_JITTER>=0 and EXPLORATION_CITY_ATTEMPTS>0,"Revisa parámetros EXPLORATION_CITY_…")
+	assert(EXPLORATION_CITY_COUNT>0 and EXPLORATION_CITY_ATTEMPTS>0,"Revisa parámetros EXPLORATION_CITY_…")
 	assert(START_CITY_RADIUS>=1 and NEW_CITY_RADIUS>=1 and CITY_MAX_RADIUS>=maxi(START_CITY_RADIUS,NEW_CITY_RADIUS),"Revisa radios de ciudades")
 	assert(TERRAIN.lake_spacing>0 and TERRAIN.lake_chance>=0 and TERRAIN.lake_chance<=1 and TERRAIN.lake_min_radius>0 and TERRAIN.lake_max_radius>=TERRAIN.lake_min_radius and TERRAIN.lake_max_radius<=TERRAIN.lake_spacing*.2,"Revisa frecuencia y tamaño de los lagos")
 	assert(CITY_RADIUS_VARIATION>=0 and NEW_CITY_RADIUS+CITY_RADIUS_VARIATION<=CITY_MAX_RADIUS,"Revisa la variación de tamaños de ciudad")

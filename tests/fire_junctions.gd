@@ -7,7 +7,7 @@ func _initialize() -> void: call_deferred("run")
 
 func fixture(crossing: bool = false) -> void:
 	g.roads.clear();g.road_nodes.clear();g.city_cells.clear();g.city_connectors.clear();g.demolished_access_tiles.clear();g.cars.clear()
-	g.traffic.reset();g.incidents.reset();g.services.reset();g.maintenance.reset();g.gameplay.reset()
+	g.traffic.reset();g.incidents.reset();g.services.reset();g.maintenance.reset();g.gameplay.reset();g.signage.reset()
 	g.elapsed=0;g.trips=0;g.earned=0;g.terrain.fill(0);g.money=100000
 	g.cities=[]
 	for i in 2:
@@ -21,6 +21,10 @@ func fixture(crossing: bool = false) -> void:
 
 func add_road(p: Vector2i) -> void:
 	g.roads[p]=g.city_road(3,true);g.road_nodes[p]={"kind":3,"axis":true}
+
+func sign_crossing() -> void:
+	g.signage.placed[center]=[{"id":"stop","direction":1},{"id":"stop","direction":2}]
+	g.graph_dirty=true;g.rebuild_graph()
 
 func driver(path: PackedVector2Array, ticket: int = 1) -> Dictionary:
 	return {"path":path,"step":0,"t":0.0,"ticket":ticket,"sprite_id":0,"heading":Vector2.RIGHT,"born":0.0,"age":0.0,"origin":0,"dest":1,"ideal":10.0,"accident_clock":0.0,"crash_left":0.0,"route_revision":g.road_revision}
@@ -118,8 +122,8 @@ func run() -> void:
 	assert(absf(hp-g.roads[center].hp-.8)<.001)
 	fixture();car=driver(straight);g.cars=[car];tick(.1)
 	assert(absf(g.roads[Vector2i(straight[0])].hp-(100-.014))<.001)
-	# A lone driver must actually stop before an uncontrolled crossing.
-	fixture(true);car=driver(straight);g.cars=[car]
+	# A STOP obliges a lone driver to stop at the crossing.
+	fixture(true);sign_crossing();car=driver(straight);g.cars=[car]
 	for i in 10: tick(.02)
 	assert(car.step==0 and is_equal_approx(car.t,g.WorldSettings.JUNCTION_STOP_LINE))
 	assert(car.yielding and g.gameplay.car_reason(car).contains("Cediendo"))
@@ -132,7 +136,7 @@ func run() -> void:
 	for i in 100: tick(.02)
 	assert(g.trips==1 and g.cars.is_empty())
 	# Loading a vehicle already granted passage must never send it backwards.
-	fixture(true);car=driver(straight);g.cars=[car]
+	fixture(true);sign_crossing();car=driver(straight);g.cars=[car]
 	for i in 60:
 		tick(.02)
 		if car.step==0 and car.t>g.WorldSettings.JUNCTION_STOP_LINE: break
@@ -140,8 +144,8 @@ func run() -> void:
 	var progress=car.t
 	saved=g.traffic.snapshot();g.traffic.restore(saved);car=g.cars[0];tick(.02)
 	assert(car.step>0 or car.t>progress)
-	# Simultaneous arrivals get distinct turns, then all complete their trips.
-	fixture(true)
+	# Signed simultaneous arrivals get distinct turns, then complete their trips.
+	fixture(true);sign_crossing()
 	var across=driver(PackedVector2Array([Vector2(101,99),Vector2(center),Vector2(102,100),Vector2(103,100)]),2)
 	car=driver(straight);g.cars=[across,car] # Reverse array order to verify stable tie-breaking.
 	var entries: Dictionary = {}
@@ -164,8 +168,8 @@ func run() -> void:
 	assert(car.step==0 and car.t==0 and g.gameplay.car_reason(car)=="Semáforo en rojo")
 	g.incidents.signals[center].enabled=false;g.graph_dirty=true
 	for i in 20: tick(.02)
-	assert(car.step==0 and car.yielding)
-	assert(g.graph.junction_delays.has(g.point_id(center)))
+	assert(car.step>=1 and not car.get("yielding",false))
+	assert(not g.graph.junction_delays.has(g.point_id(center)))
 	# Contiguous junctions must not deadlock a pair of opposing vehicles.
 	fixture(true)
 	add_road(Vector2i(102,99));add_road(Vector2i(102,101));g.rebuild_graph()

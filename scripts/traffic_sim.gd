@@ -7,6 +7,7 @@ const FOLLOWING_GAP = 0.76 # Longitud de coche más margen, en casillas de carre
 var g
 var junctions
 var occupants: Dictionary = {}
+var collision_encounters: Dictionary = {}
 var pending: Dictionary = {}
 var history: Dictionary = {}
 var queued = 0
@@ -21,6 +22,7 @@ func _init(game) -> void:
 func reset() -> void:
 	junctions.reset()
 	occupants.clear()
+	collision_encounters.clear()
 	pending.clear()
 	history.clear()
 	queued = 0
@@ -37,6 +39,17 @@ func refresh_connections() -> void:
 		city_ids[g.point_id(g.cities[i].pos)] = i
 		current_links[i] = []
 		if not g.cities[i].has("unlocked"): g.cities[i].unlocked = []
+	if g.signage.has_movement_rules:
+		for start in city_ids:
+			var origin: int = city_ids[start]
+			var reachable: Array = g.graph.reachable_cities(start,city_ids)
+			current_links[origin] = reachable
+			for dest in reachable:
+				if dest in g.cities[origin].unlocked: continue
+				g.cities[origin].unlocked.append(dest)
+				newly_connected = true
+		if newly_connected: g.demand_clock = maxf(g.demand_clock,DEMAND_INTERVAL)
+		return
 	var reverse: Dictionary = {}
 	var ids = g.graph.get_point_ids()
 	for id in ids: reverse[id] = []
@@ -118,13 +131,13 @@ func route(start: Vector2i, dest: int, incoming: Vector2i = Vector2i.ZERO) -> Pa
 	return path
 
 func incoming_direction(car: Dictionary) -> Vector2i:
-	if car.step>0: return Vector2i(car.path[car.step]-car.path[car.step-1])
+	if car.step>0: return Vector2i(car.path[car.step]-car.path[car.step-1]).sign()
 	return car.get("incoming",Vector2i.ZERO)
 
 func curve_factor(car: Dictionary) -> float:
 	if car.step+1>=car.path.size(): return 1.0
 	var p = position(car)
-	var outgoing = Vector2i(car.path[car.step+1])-p
+	var outgoing = (Vector2i(car.path[car.step+1])-p).sign()
 	if g.graph.has_point(g.point_id(p)):
 		return g.graph.passage_factor(g.point_id(p),incoming_direction(car),outgoing)
 	return g.graph.turn_factor(incoming_direction(car),outgoing)
@@ -134,7 +147,14 @@ func driving_speed(car: Dictionary) -> float:
 	if not g.roads.has(p): return 0.0
 	var road = g.roads[p]
 	var spec = g.Catalog.ROADS[road.kind]
-	return spec.speed*(0.35+0.65*road.hp/100.0)*g.services.speed_factor(p)*(0.8 if g.gameplay.profile(g.cities[car.origin])==1 else 1.0)*curve_factor(car)
+	var length = maxf(1,car.path[car.step].distance_to(car.path[mini(car.step+1,car.path.size()-1)]))
+	var speed: float = spec.speed*(0.35+0.65*road.hp/100.0)*g.services.speed_factor(p)*(0.8 if g.gameplay.profile(g.cities[car.origin])==1 else 1.0)*curve_factor(car)
+	var heading = Vector2i(car.path[mini(car.step+1,car.path.size()-1)]-Vector2(p)).sign()
+	return minf(speed,g.signage.speed_at(p,heading))/length
+
+func movement_allowed(car: Dictionary, p: Vector2i, q: Vector2i) -> bool:
+	if not g.drive_edge(p,q) or not g.incidents.signal_allows(q,q-p): return false
+	return g.services.evacuating(p) or not g.signage.has_movement_rules or g.graph.allows_turn(g.point_id(p),incoming_direction(car),(q-p).sign())
 
 func admit() -> void:
 	if g.cars.size() >= MAX_VISIBLE_CARS: return
@@ -152,11 +172,13 @@ func admit() -> void:
 			while free > 0 and not batches.is_empty() and g.cars.size() < MAX_VISIBLE_CARS:
 				var batch = batches[0]
 				var path = route(start, dest)
-				if path.size() < 2: path = history.get(Vector3i(start.x, start.y, dest), PackedVector2Array([Vector2(start)]))
+				if path.size() < 2 and not g.signage.has_movement_rules: path = history.get(Vector3i(start.x, start.y, dest), PackedVector2Array([Vector2(start)]))
 				if path.size() < 2: break
 				if not spawn_has_following_gap(start, Vector2i(path[1])): break
 				next_ticket += 1
-				var ideal = path.size() / Settings.TRIP_REFERENCE_SPEED
+				var length = 1.0
+				for i in range(1,path.size()): length+=path[i-1].distance_to(path[i])
+				var ideal = length / Settings.TRIP_REFERENCE_SPEED
 				g.cars.append({"path":path, "step":0, "t":0.0, "age":g.elapsed - batch.born, "born":batch.born, "origin":origin, "dest":dest, "color":next_ticket % 8, "sprite_id":next_ticket % 8, "heading":Vector2.UP, "ideal":maxf(1, ideal), "accident_clock":0.0, "crash_left":0.0, "route_revision":g.road_revision, "blocked":false, "ticket":next_ticket})
 				batch.count -= 1
 				queued -= 1
@@ -168,13 +190,40 @@ func admit() -> void:
 
 func update(dt: float) -> void:
 	g.density.clear()
+	var positions: Dictionary = {}
 	for car in g.cars:
 		var p = position(car)
+		positions[car.ticket]=p
 		g.density[p] = g.density.get(p, 0) + 1
 		g.incidents.used(p)
+	for key in collision_encounters.keys():
+		var junction = Vector2i(key.x,key.y)
+		if not positions.has(key.z) or not positions.has(key.w) or (positions[key.z]-junction).abs().x+(positions[key.z]-junction).abs().y>1 or (positions[key.w]-junction).abs().x+(positions[key.w]-junction).abs().y>1:
+			collision_encounters.erase(key)
 	if dt <= 0: return
 	var steps = clampi(int(ceil(dt / 0.08)), 1, 64)
 	for i in steps: step_traffic(dt / steps)
+
+# Si la ruta guardada termina dentro del cierre, buscar una salida transitable.
+func find_evacuation_path(car: Dictionary) -> PackedVector2Array:
+	var start = position(car)
+	var queue: Array = [start]
+	var previous: Dictionary = {start:start}
+	var index = 0
+	while index<queue.size():
+		var p: Vector2i = queue[index]
+		index+=1
+		for q in g.road_neighbours(p):
+			if previous.has(q) or not g.services.evacuation_move(p,q) or not g.drive_edge(p,q): continue
+			previous[q]=p
+			if g.road_open(q):
+				var result = PackedVector2Array([Vector2(q)])
+				while q!=start:
+					q=previous[q]
+					result.insert(0,Vector2(q))
+				return result
+			queue.append(q)
+	return PackedVector2Array()
 
 func step_traffic(dt: float) -> void:
 	var ready: Array = []
@@ -191,6 +240,7 @@ func step_traffic(dt: float) -> void:
 			var heading = car.path[car.step+1]-car.path[car.step]
 			if heading.length_squared()>0: car.heading = heading.normalized()
 		car.age = maxf(0, g.elapsed - car.born)
+		car.collision_cooldown = maxf(0.0,car.get("collision_cooldown",0.0)-dt)
 		car.blocked = false
 		if car.get("crash_left", 0.0) > 0:
 			car.accident_clock += dt
@@ -198,7 +248,7 @@ func step_traffic(dt: float) -> void:
 			car.blocked = true
 			continue
 		if g.incidents.accident(car, p, dt): car.blocked = true; continue
-		if car.get("route_revision", -1) != g.road_revision or car.path.size() < 2:
+		if not g.services.evacuating(p) and (car.get("route_revision", -1) != g.road_revision or car.path.size() < 2):
 			var previous_next = Vector2i(car.path[car.step+1]) if car.step+1<car.path.size() else p
 			var previous_progress: float = car.t
 			car.incoming=incoming_direction(car)
@@ -208,19 +258,26 @@ func step_traffic(dt: float) -> void:
 				car.step = 0
 				car.t = previous_progress if Vector2i(replacement[1])==previous_next else 0.0
 			car.route_revision = g.road_revision
+		if g.services.evacuating(p) and (car.path.size()<2 or (g.services.evacuating(Vector2i(car.path[-1])) and Vector2i(car.path[-1])!=g.cities[car.dest].pos)):
+			var escape = find_evacuation_path(car)
+			if escape.size()>1:
+				var old_next = Vector2i(car.path[car.step+1]) if car.step+1<car.path.size() else p
+				car.t = car.t if Vector2i(escape[1])==old_next else 0.0
+				car.path=escape
+				car.step=0
 		if car.path.size() < 2 or car.step >= car.path.size()-1:
 			car.blocked = true
 			continue
-		if not g.road_open(p): car.blocked = true; continue
+		if not g.road_open(p) and not g.services.evacuating(p): car.blocked = true; continue
 		var next = Vector2i(car.path[car.step + 1])
-		var allowed = g.road_open(next) and g.edge_allowed(p, next)
-		if not allowed or not g.incidents.signal_allows(next,next-p):
+		if not (g.road_open(p) and g.road_open(next) or g.services.evacuation_move(p,next)) or not movement_allowed(car,p,next):
 			car.blocked = true
 			continue
 		var v = driving_speed(car)
 		car.step_speed=v
 		var r = g.roads[p]
-		r.hp = maxf(minf(r.hp,Settings.ROAD_MIN_HEALTH),r.hp-dt*Settings.ROAD_TRAFFIC_WEAR)
+		if not r.has("urban_city"):
+			r.hp = maxf(minf(r.hp,Settings.ROAD_MIN_HEALTH),r.hp-dt*Settings.ROAD_TRAFFIC_WEAR)
 		car.t = minf(1.999999, car.t + dt * v)
 		junctions.limit_progress(car)
 	# Agrupar por tramo evita comparar cada coche con todos los demás.
@@ -234,6 +291,8 @@ func step_traffic(dt: float) -> void:
 		segments[key].append(car)
 	for group in segments.values():
 		if group.size()<2: continue
+		var lead = group[0]
+		var gap = FOLLOWING_GAP/maxf(1,lead.path[lead.step].distance_to(lead.path[lead.step+1]))
 		group.sort_custom(func(a,b): return prior_progress[a.ticket]>prior_progress[b.ticket])
 		var leader_progress = INF
 		var previous = INF
@@ -244,7 +303,7 @@ func step_traffic(dt: float) -> void:
 				leader_progress=minf(leader_progress,tied_progress)
 				tied_progress=INF;previous=before
 			if car.get("crash_left",0.0)<=0 and leader_progress<INF:
-				var safe = maxf(0.0,leader_progress-FOLLOWING_GAP)
+				var safe = maxf(0.0,leader_progress-gap)
 				if car.t>safe: car.t=safe;car.blocked=true
 			tied_progress=minf(tied_progress,car.t)
 	junctions.update(dt,prior_progress)
@@ -252,9 +311,10 @@ func step_traffic(dt: float) -> void:
 		if car.t >= 1 and car.step+1 < car.path.size() and car.get("crash_left",0.0)<=0:
 			var p = position(car)
 			var q = Vector2i(car.path[car.step+1])
-			if not g.road_open(p) or not g.road_open(q) or not g.edge_allowed(p,q) or not g.incidents.signal_allows(q,q-p): continue
-			if junctions.uncontrolled(q) and junctions.grants.get(q,-1)!=car.ticket: continue
+			if not (g.road_open(p) and g.road_open(q) or g.services.evacuation_move(p,q)) or not movement_allowed(car,p,q): continue
+			if junctions.needs_grant(car,q) and junctions.grants.get(q,-1)!=car.ticket: continue
 			ready.append({"car":car,"p":position(car),"q":Vector2i(car.path[car.step+1])})
+	resolve_uncontrolled_collisions(ready)
 	ready.sort_custom(func(a,b): return a.car.ticket < b.car.ticket)
 	var finished: Dictionary = {}
 	while not ready.is_empty():
@@ -306,16 +366,67 @@ func has_following_gap(move: Dictionary) -> bool:
 		if position(other) != move.q: continue
 		var next: Vector2i = Vector2i(other.path[other.step+1])
 		var outgoing: Vector2 = Vector2(next-move.q).normalized()
-		if incoming.dot(outgoing) > 0.5 and other.t < FOLLOWING_GAP:
+		if incoming.dot(outgoing) > 0.5 and other.t*maxf(1,Vector2(next-move.q).length()) < FOLLOWING_GAP:
 			return false
 	return true
 
 func spawn_has_following_gap(start: Vector2i, next: Vector2i) -> bool:
 	for other in g.cars:
 		if other.path.size() < 2 or other.step >= other.path.size()-1: continue
-		if position(other) == start and Vector2i(other.path[other.step+1]) == next and other.t < FOLLOWING_GAP:
+		if position(other) == start and Vector2i(other.path[other.step+1]) == next and other.t*maxf(1,Vector2(next-start).length()) < FOLLOWING_GAP:
 			return false
 	return true
+
+# Dos giros a la derecha usan esquinas distintas y no se cruzan.
+func turns_right_at(car: Dictionary, junction: Vector2i) -> bool:
+	var step: int = car.step
+	var at_junction = position(car)==junction
+	var index = step if at_junction else step+1
+	if index+1>=car.path.size(): return false
+	var incoming = incoming_direction(car) if at_junction else (junction-position(car)).sign()
+	var outgoing = (Vector2i(car.path[index+1])-junction).sign()
+	return incoming.x*outgoing.y-incoming.y*outgoing.x>0
+
+func collision_encounter(a: Dictionary, b: Dictionary, p: Vector2i, exposure: float) -> bool:
+	if a.get("collision_cooldown",0.0)>0 or b.get("collision_cooldown",0.0)>0: return false
+	if turns_right_at(a,p) and turns_right_at(b,p): return false
+	var key = Vector4i(p.x,p.y,mini(a.ticket,b.ticket),maxi(a.ticket,b.ticket))
+	if collision_encounters.has(key): return false
+	collision_encounters[key]=true
+	var speed = (float(a.get("step_speed",driving_speed(a)))+float(b.get("step_speed",driving_speed(b))))*0.5
+	var probability = clampf(Settings.JUNCTION_COLLISION_RISK * clampf(speed/4.0,0.5,1.5) * exposure,0.0,1.0)
+	return g.rng.randf()<probability
+
+# Se evalúa una vez cada encuentro entre vehículos de ejes perpendiculares.
+func resolve_uncontrolled_collisions(ready: Array) -> void:
+	var approaches: Dictionary = {}
+	for move in ready:
+		if junctions.collision_risk(move.q):
+			if not approaches.has(move.q): approaches[move.q]=[]
+			approaches[move.q].append(move)
+	var crashed: Dictionary = {}
+	for p in approaches:
+		var group: Array = approaches[p]
+		for i in group.size():
+			var move = group[i]
+			if crashed.has(move.car.ticket): continue
+			var direction: Vector2i = (p-move.p).sign()
+			var other_car: Dictionary = {}
+			for j in range(i+1,group.size()):
+				var other = group[j]
+				if not crashed.has(other.car.ticket) and Vector2(direction).dot(Vector2((p-other.p).sign()))==0 and collision_encounter(move.car,other.car,p,1.0):
+					other_car=other.car;break
+			if other_car.is_empty():
+				for other in occupants.get(p,[]):
+					if other.get("crash_left",0.0)>0 or other.t>=Settings.JUNCTION_CLEAR_PROGRESS: continue
+					var incoming = incoming_direction(other)
+					var exposure = clampf(1.0-other.t/Settings.JUNCTION_CLEAR_PROGRESS,0.0,1.0)
+					if incoming!=Vector2i.ZERO and Vector2(direction).dot(Vector2(incoming))==0 and collision_encounter(move.car,other,p,exposure): other_car=other;break
+			if other_car.is_empty(): continue
+			g.incidents.record_accident([move.car,other_car],p)
+			crashed[move.car.ticket]=true;crashed[other_car.ticket]=true
+	for move in ready.duplicate():
+		if crashed.has(move.car.ticket): ready.erase(move)
 
 func commit_move(move: Dictionary, finished: Dictionary, release: bool = true) -> void:
 	var car = move.car
@@ -325,7 +436,7 @@ func commit_move(move: Dictionary, finished: Dictionary, release: bool = true) -
 	if release: g.density[move.p] = maxi(0,int(g.density.get(move.p,1))-1)
 	g.density[move.q] = int(g.density.get(move.q,0))+1
 	var remaining_time = maxf(0,car.t-1)/maxf(0.001,car.get("step_speed",driving_speed(car)))
-	car.incoming=move.q-move.p
+	car.incoming=(move.q-move.p).sign()
 	car.step += 1
 	car.t = remaining_time*driving_speed(car)
 	car.blocked = false
@@ -359,16 +470,19 @@ func snapshot() -> Dictionary:
 		var data = car.duplicate()
 		data.incoming=incoming_direction(car)
 		data.erase("step_speed")
+		if g.services.evacuating(position(car)):
+			data.evacuation_path = car.path.slice(car.step)
 		data.erase("path")
 		data.erase("step")
 		data.pos = position(car)
 		data.next = Vector2i(car.path[mini(car.step+1,car.path.size()-1)])
 		vehicles.append(data)
-	return {"pending":pending, "queued":queued, "ticket":next_ticket, "vehicles":vehicles,"junctions":junctions.snapshot()}
+	return {"pending":pending, "queued":queued, "ticket":next_ticket, "vehicles":vehicles,"junctions":junctions.snapshot(),"collision_encounters":collision_encounters.duplicate()}
 
-func restore(data: Dictionary) -> void:
+func restore(data: Dictionary, legacy_overpasses: bool = false) -> void:
 	reset()
 	junctions.restore(data.get("junctions",{}))
+	collision_encounters=data.get("collision_encounters",{}).duplicate()
 	pending = data.get("pending", {})
 	queued = data.get("queued", 0)
 	for key in pending:
@@ -381,6 +495,18 @@ func restore(data: Dictionary) -> void:
 		car.heading = car.get("heading",Vector2.UP)
 		var start: Vector2i = car.pos
 		var next: Vector2i = car.get("next",start)
+		if legacy_overpasses and start!=next and g.bridge_decks.has(start):
+			var span: Vector4i = g.bridge_decks[start]
+			var direction = (next-start).sign()
+			if (span.x!=span.z and direction.y==0) or (span.y!=span.w and direction.x==0):
+				var a = Vector2i(span.x,span.y)
+				var b = Vector2i(span.z,span.w)
+				if direction.x<0 or direction.y<0:
+					a = Vector2i(span.z,span.w)
+					b = Vector2i(span.x,span.y)
+				car.t = (Vector2(a).distance_to(Vector2(start))+float(car.get("t",0.0)))/Vector2(a).distance_to(Vector2(b))
+				start=a
+				next=b
 		# Antes las rutas atravesaban edificios. Migrar esos coches a la calle
 		# más cercana de su ciudad sin perder destino, espera ni identidad.
 		if g.retired_city_cells.has(start):
@@ -395,7 +521,9 @@ func restore(data: Dictionary) -> void:
 				if candidate<distance: nearest=p; distance=candidate
 			start=nearest; next=nearest
 		if start!=car.pos: car.incoming=Vector2i.ZERO
-		car.path = PackedVector2Array([Vector2(start),Vector2(next)]) if start!=next else PackedVector2Array([Vector2(start)])
+		car.path = car.get("evacuation_path",PackedVector2Array()) if start==car.pos else PackedVector2Array()
+		if car.path.is_empty(): car.path = PackedVector2Array([Vector2(start),Vector2(next)]) if start!=next else PackedVector2Array([Vector2(start)])
+		car.erase("evacuation_path")
 		car.step = 0
 		car.t = clampf(car.get("t",0.0),0,1) if start!=next else 0.0
 		car.erase("next")

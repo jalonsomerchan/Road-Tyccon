@@ -89,7 +89,7 @@ func visual_state(p: Vector2i) -> String:
 	if r.hp < 15: return "extreme_damage"
 	if r.hp < 40: return "very_damaged"
 	if r.hp < 75: return "damaged"
-	if signals.has(p): return "signal"
+	if signals.has(p) and not g.is_bridge(p): return "signal"
 	return ""
 
 func update(dt: float) -> void:
@@ -98,12 +98,12 @@ func update(dt: float) -> void:
 		if snow[p] <= g.elapsed: snow.erase(p)
 	for p in fire.keys():
 		var active_dt = clampf(float(fire[p])-(g.elapsed-dt),0.0,dt)
-		if g.roads.has(p):
+		if g.roads.has(p) and not g.roads[p].has("urban_city"):
 			g.roads[p].hp = maxf(0.0,g.roads[p].hp-Settings.FIRE_ROAD_DAMAGE*active_dt)
 			if g.roads[p].hp <= 0: burn_road(p)
 		if fire[p] <= g.elapsed:
 			fire.erase(p)
-			if g.roads.has(p): g.graph_dirty = true
+			if g.roads.has(p) or g.bridge_decks.has(p): g.graph_dirty = true
 	for i in range(zones.size() - 1, -1, -1):
 		var z = zones[i]
 		if g.elapsed >= z.until:
@@ -167,7 +167,7 @@ func spread_fire(zone: Dictionary) -> void:
 	var p = candidates[g.rng.randi_range(0, candidates.size() - 1)]
 	fire[p] = g.elapsed + rules.fire_duration
 	zone.cells.append(p)
-	if g.roads.has(p): g.graph_dirty = true
+	if g.roads.has(p) or g.bridge_decks.has(p): g.graph_dirty = true
 
 func burn_road(p: Vector2i) -> void:
 	var cells = ring_cells(roundabout_cells[p]) if roundabout_cells.has(p) else [p]
@@ -192,6 +192,7 @@ func erase_road(p: Vector2i, force: bool = false) -> void:
 		g.roads.erase(p)
 		g.road_nodes.erase(p)
 	signals.erase(p)
+	g.signage.placed.erase(p)
 	g.graph_dirty = true
 
 func accident(car: Dictionary, p: Vector2i, dt: float) -> bool:
@@ -199,19 +200,25 @@ func accident(car: Dictionary, p: Vector2i, dt: float) -> bool:
 	while car.accident_clock >= ACCIDENT_INTERVAL:
 		car.accident_clock -= ACCIDENT_INTERVAL
 		if g.roads.has(p) and g.rng.randf() < risk(p):
-			car.crash_left = ACCIDENT_STOP
-			g.transact(-ACCIDENT_COST,"accidents","Accidente de tráfico")
-			accidents += 1
-			accident_losses += ACCIDENT_COST
-			last_alert=p
-			g.event_notices.push("accident",p,"Vehículo detenido %.0f s · Coste %s"%[ACCIDENT_STOP,g.cash(ACCIDENT_COST)])
-			g.money_popups.append({"amount":-ACCIDENT_COST, "pos":Vector2(p), "age":0.0, "offset":0})
-			if g.money_popups.size() > 96: g.money_popups.pop_front()
+			record_accident([car],p)
 			return true
 	return false
 
+func record_accident(cars: Array, p: Vector2i) -> void:
+	for car in cars:
+		car.crash_left = ACCIDENT_STOP
+		car.collision_cooldown = ACCIDENT_STOP + 2.0
+		car.blocked = true
+	g.transact(-ACCIDENT_COST,"accidents","Accidente de tráfico")
+	accidents += 1
+	accident_losses += ACCIDENT_COST
+	last_alert=p
+	g.event_notices.push("accident",p,"Vehículos detenidos %.0f s · Coste %s"%[ACCIDENT_STOP,g.cash(ACCIDENT_COST)])
+	g.money_popups.append({"amount":-ACCIDENT_COST, "pos":Vector2(p), "age":0.0, "offset":0})
+	if g.money_popups.size() > 96: g.money_popups.pop_front()
+
 func signal_allows(p: Vector2i, direction: Vector2i) -> bool:
-	if not signals.has(p) or not signals[p].enabled: return true
+	if not signals.has(p) or not signals[p].enabled or g.is_bridge(p): return true
 	var s = signals[p]
 	var phase = fposmod(g.elapsed + s.offset, s.ns + s.ew)
 	return phase < s.ns if direction.y != 0 else phase >= s.ns

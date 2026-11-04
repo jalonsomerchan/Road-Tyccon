@@ -5,11 +5,35 @@ func city_plan(game,city: Dictionary) -> Array:
 	for y in range(-city.radius,city.radius+1):
 		for x in range(-city.radius,city.radius+1): result.append(game.CityDesign.cell(city,Vector2i(x,y)))
 	return result
+
+func check_building_lots(game, city: Dictionary) -> void:
+	var design = game.CityDesign
+	var urban: bool = design.is_urban(city)
+	var chunk = preload("res://scripts/terrain_chunk.gd").new()
+	chunk.game = game
+	var visuals = game.visuals
+	var pavement: Vector2 = visuals.sheets.terrain[visuals.PAVEMENT_TILE].region.position / visuals.scenery_atlas_size
+	for y in range(-city.radius,city.radius+1):
+		for x in range(-city.radius,city.radius+1):
+			var p = Vector2i(x,y)
+			var plan = design.cell(city,p)
+			if plan.role not in ["building","civic"]: continue
+			if plan.role=="civic":
+				assert(plan.sprite==(design.CITY_HALL if urban else design.VILLAGE_HALL))
+			elif urban:
+				assert(plan.sprite>=design.FIRST_URBAN and plan.sprite<design.CITY_HALL)
+			else:
+				assert(plan.sprite>=0 and plan.sprite<design.VILLAGE_HALL)
+			chunk.uvs.clear()
+			chunk.draw_ground(city.pos+p,Vector2.ZERO)
+			assert(chunk.uvs[0]==pavement,"Every building and civic lot has pavement")
+	chunk.free()
+
 func run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.set_process(false)
-	assert(game.visuals.sheets.buildings.size()==8 and game.visuals.sheets.vehicles.size()==8)
+	assert(game.visuals.sheets.buildings.size()==19 and game.visuals.sheets.vehicles.size()==8)
 	# All open seams, including shoulders, must match the neighboring straight exactly.
 	var ports = [[0,2],[0,1],[0,1,3],[0,1,2,3]]
 	for kind in 24:
@@ -33,7 +57,7 @@ func run() -> void:
 			assert(pixels.get_size()==Vector2i(64,64))
 			assert(pixels.get_pixel(0,0).a==0)
 			hashes[hash(pixels.get_data())] = true
-		assert(hashes.size()==8,"All eight assets must be distinct")
+		assert(hashes.size()==game.visuals.sheets[family].size(),"Every asset must be distinct")
 	game.cities.clear();game.city_cells.clear();game.city_connectors.clear();game.roads.clear();game.road_nodes.clear()
 	game.terrain.fill(0)
 	var styles: Dictionary = {}
@@ -46,6 +70,9 @@ func run() -> void:
 		assert(plan==city_plan(game,city),"Design is deterministic")
 		layouts[hash(plan)] = true
 	assert(styles.size()==4 and layouts.size()==4)
+	for i in 4:
+		game.add_city(Vector2i(100+i*30,140),"Pueblo "+str(i),3)
+	for city in game.cities: check_building_lots(game,city)
 	var before: Array = []
 	for city in game.cities: before.append(city_plan(game,city))
 	game.save_path = "res://tests/visual_save.bin"
@@ -55,14 +82,14 @@ func run() -> void:
 	file.close()
 	game.world_seed = 987654
 	game.load_game()
-	for i in 4: assert(before[i]==city_plan(game,game.cities[i]))
+	for i in before.size(): assert(before[i]==city_plan(game,game.cities[i]))
 	# Old saves receive the same stable identities every time they are loaded.
 	for city in data.cities:
 		city.erase("design_seed");city.erase("design_style")
 	file = FileAccess.open(game.save_path,FileAccess.WRITE);file.store_var(data);file.close()
 	game.world_seed = 123
 	game.load_game()
-	for i in 4: assert(before[i]==city_plan(game,game.cities[i]))
+	for i in before.size(): assert(before[i]==city_plan(game,game.cities[i]))
 	var seed: int = game.cities[0].design_seed
 	var style: int = game.cities[0].design_style
 	var signature: int = game.CityDesign.signature(game.cities[0])
@@ -70,7 +97,12 @@ func run() -> void:
 	game.grow_cities()
 	assert(game.cities[0].design_seed==seed and game.cities[0].design_style==style)
 	assert(game.CityDesign.signature(game.cities[0])!=signature)
+	game.cities[4].pop=2200
+	assert(not game.CityDesign.is_urban(game.cities[4]))
+	game.grow_cities()
+	assert(game.CityDesign.is_urban(game.cities[4]))
+	check_building_lots(game,game.cities[4])
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
-	print("PASS: 96 road sprites with exact shared seams, eight distinct cars/buildings, four city designs, deterministic appearance, save persistence, old-save migration and growth identity")
+	print("PASS: 96 road sprites with exact shared seams, distinct cars/buildings, paved village and city lots, growth, deterministic appearance and old-save migration")
 	game.free()
 	quit()
