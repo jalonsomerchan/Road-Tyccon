@@ -19,6 +19,8 @@ func model() -> Array:
 		"menu":
 			for i in g.MENU_ACTIONS.size(): result.append(entry(g.MENU_ACTIONS[i],Rect2(166+i%2*486,164+int(i/2)*104,462,92)))
 			for i in 4: result.append(entry(["save","load","help","speed"][i],Rect2(166+i*194,592,180,40),i!=1 or FileAccess.file_exists(g.save_path)))
+			result.append(entry("event:open",Rect2(942,592,180,40)))
+		"notices": result=g.event_notices.model()
 		"catalog": result=g.construction_catalog.model()
 		"cities":
 			var start=int(g.city_list_index/6)*6
@@ -143,7 +145,7 @@ func activate() -> void:
 	sync()
 
 func focused(action: String, area: Rect2) -> bool:
-	if not g.last_pad or current!=action or context!=key(): return false
+	if (not g.last_pad and g.panel!="notices") or current!=action or context!=key(): return false
 	for item in items:
 		if item.action==current: return item.rect.intersects(area)
 	return false

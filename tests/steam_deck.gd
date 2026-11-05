@@ -82,12 +82,12 @@ func run() -> void:
 	press(JOY_BUTTON_START)
 	for button in [JOY_BUTTON_DPAD_UP,JOY_BUTTON_DPAD_DOWN,JOY_BUTTON_DPAD_LEFT,JOY_BUTTON_DPAD_RIGHT,JOY_BUTTON_RIGHT_STICK]:
 		press(button);assert(g.panel=="")
-	# Event B still dismisses only the notice, preserving the current menu.
+	# An arriving notice never hijacks B: close the menu and retain the inbox.
 	g.open_menu();g.incidents.ignite(g.cursor);press(JOY_BUTTON_B)
-	assert(g.panel=="menu" and g.event_notices.pending.is_empty())
+	assert(g.panel=="" and not g.event_notices.pending.is_empty())
 	press(JOY_BUTTON_B);assert(g.panel=="")
 	key(KEY_F10);assert(g.panel=="menu");key(KEY_F10);assert(g.panel=="")
 	key(KEY_6);assert(g.panel=="menu");key(KEY_ESCAPE);assert(g.panel=="")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(g.save_path))
-	print("PASS: idle B/cancel-only controls, 100 bumper presses without menus, dedicated Menu/View, panel-scoped bumpers, L3 pause/resume and persistence, explicit cheats, catalog from every tool, stick filtering and event dismissal")
+	print("PASS: idle B/cancel-only controls, 100 bumper presses without menus, dedicated Menu/View, panel-scoped bumpers, L3 pause/resume and persistence, explicit cheats, catalog from every tool, stick filtering and passive events")
 	g.free();quit()

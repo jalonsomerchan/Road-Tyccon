@@ -550,8 +550,7 @@ func _process(delta: float) -> void:
 	var move = Vector2i.ZERO
 	if deck_input.keyboard_down(KEY_W) or deck_input.keyboard_down(KEY_UP): move.y -= 1
 	if deck_input.keyboard_down(KEY_S) or deck_input.keyboard_down(KEY_DOWN): move.y += 1
-	if not deck_input.keyboard_down(KEY_A): event_notices.suppress_a=false
-	if (deck_input.keyboard_down(KEY_A) and not event_notices.suppress_a) or deck_input.keyboard_down(KEY_LEFT): move.x -= 1
+	if deck_input.keyboard_down(KEY_A) or deck_input.keyboard_down(KEY_LEFT): move.x -= 1
 	if deck_input.keyboard_down(KEY_D) or deck_input.keyboard_down(KEY_RIGHT): move.x += 1
 	var pad_move=deck_input.direction()
 	if pad_move!=Vector2i.ZERO: move=pad_move
@@ -1128,9 +1127,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if deck_input.duplicate_alias(event) or deck_input.handle(event): return
 	if cheats!=null and cheats.is_open(): return
 	if at_title: title_input(event); return
-	if event_notices.handle_input(event):
-		get_viewport().set_input_as_handled()
-		return
 	if event is InputEventMouseMotion:
 		if last_pad or event.relative.length_squared()<1: return
 		last_pad = false
@@ -1147,6 +1143,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var direction = 1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1
 			if panel == "cities": move_city_list(-direction)
 			elif panel == "accounts": account_scroll = maxi(0,account_scroll-direction)
+			elif panel == "notices": event_notices.change_page(-direction)
 			elif panel in ["","map"]: zoom_control(pow(1.25,direction))
 			return
 		if event.button_index == MOUSE_BUTTON_RIGHT:
@@ -1175,6 +1172,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		hover_cell = NO_CELL
 		if event.physical_keycode in [KEY_ESCAPE,KEY_B]: cancel_or_back(); return
 		if event.physical_keycode == KEY_F10: toggle_menu(); return
+		if event.physical_keycode == KEY_F2: event_notices.toggle(); return
 		if event.physical_keycode == KEY_F5: save_game(); return
 		if event.physical_keycode == KEY_F9: load_game(); close_panels(); return
 		if event.physical_keycode == KEY_SPACE: toggle_pause(); return
@@ -1253,6 +1251,7 @@ func panel_bumper(direction: int) -> void:
 		"cities": move_city_list(direction*6)
 		"catalog": construction_catalog.change_tab(direction)
 		"accounts": account_filter=posmod(account_filter+direction,3);account_scroll=0
+		"notices": event_notices.change_page(direction)
 		"network": gameplay_ui.tab=posmod(gameplay_ui.tab+direction,3);gameplay_ui.focus_index=0
 		"menu","objectives","scenarios": panel_move(direction,0)
 		"signal","infrastructure": special_move(direction)
@@ -1354,6 +1353,7 @@ func open_panel(name: String) -> void:
 		tool = TOOLS.size()-1
 	panel = name
 	if name == "catalog": construction_catalog.open()
+	if name == "notices": event_notices.open()
 	if name == "map": navigator.open()
 	if name == "cities": city_list_index = clampi(city_list_index,0,maxi(0,cities.size()-1))
 	if name == "accounts": account_scroll = 0

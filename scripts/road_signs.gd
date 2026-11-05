@@ -44,6 +44,7 @@ var g
 var placed: Dictionary = {}
 var heading = 0
 var limits: Dictionary = {}
+var junction_priorities: Dictionary = {}
 var has_movement_rules = false
 
 func _init(game) -> void: g = game
@@ -63,6 +64,7 @@ static func entries() -> Array:
 func reset() -> void:
 	placed.clear()
 	limits.clear()
+	junction_priorities.clear()
 	heading = 0
 	has_movement_rules = false
 
@@ -114,6 +116,17 @@ func has_priority(p: Vector2i) -> bool:
 		if sign.id in PRIORITY: return true
 	return false
 
+func controls_junction(p: Vector2i) -> bool:
+	return has_priority(p) or junction_priorities.has(p)
+
+func approach_priority(p: Vector2i, direction: Vector2i) -> String:
+	var sign = priority(p,direction)
+	if not sign.is_empty(): return sign
+	# Una señal en el acceso regula también el cruce inmediatamente posterior.
+	# El STOP ya se cumple al llegar a su casilla; en el cruce se sigue cediendo.
+	sign = junction_priorities.get(p,{}).get(direction,"")
+	return "yield" if sign=="stop" else sign
+
 func allows_edge(p: Vector2i, q: Vector2i) -> bool:
 	var direction = DIRECTIONS.find((q-p).sign())
 	for sign in placed.get(q,[]):
@@ -140,11 +153,18 @@ static func allows_turn(signs: Array, incoming: Vector2i, outgoing: Vector2i) ->
 
 func rebuild() -> void:
 	limits.clear()
+	junction_priorities.clear()
 	has_movement_rules = false
 	var boundaries: Dictionary = {}
 	for p in placed:
 		if not g.roads.has(p): continue
 		for sign in placed[p]:
+			if sign.id in PRIORITY and g.road_neighbours(p).size()<3:
+				var direction: Vector2i = DIRECTIONS[sign.direction]
+				var junction: Vector2i = p+direction
+				if junction in g.road_neighbours(p) and g.road_neighbours(junction).size()>=3:
+					if not junction_priorities.has(junction): junction_priorities[junction] = {}
+					junction_priorities[junction][direction] = sign.id
 			if sign.id in MOVEMENT: has_movement_rules = true
 			if slot(sign.id)=="speed":
 				boundaries[Vector3i(p.x,p.y,sign.direction)] = int(sign.id.trim_prefix("limit_")) if sign.id!="end_limit" else 0

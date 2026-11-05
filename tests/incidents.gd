@@ -147,7 +147,7 @@ func run() -> void:
 	for i in 10:
 		game.elapsed += 0.1
 		game.update_cars(0.1)
-	assert(game.traffic.position(driver) == at and driver.t == 0 and driver.blocked)
+	assert(game.traffic.position(driver) == at and is_equal_approx(driver.t,game.WorldSettings.JUNCTION_STOP_LINE) and driver.blocked)
 	game.incidents.signals[game.cursor].enabled = false
 	game.elapsed += 0.2
 	game.update_cars(0.2)

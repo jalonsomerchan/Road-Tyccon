@@ -165,7 +165,7 @@ func run() -> void:
 	fixture(true);g.incidents.signals[center]={"ns":120.0,"ew":1.0,"enabled":true,"offset":0.0}
 	car=driver(straight);g.cars=[car]
 	for i in 50: tick(.02)
-	assert(car.step==0 and car.t==0 and g.gameplay.car_reason(car)=="Semáforo en rojo")
+	assert(car.step==0 and is_equal_approx(car.t,g.WorldSettings.JUNCTION_STOP_LINE) and g.gameplay.car_reason(car)=="Semáforo en rojo")
 	g.incidents.signals[center].enabled=false;g.graph_dirty=true
 	for i in 20: tick(.02)
 	assert(car.step>=1 and not car.get("yielding",false))

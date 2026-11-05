@@ -68,7 +68,6 @@ func can_upgrade() -> bool:
 	return road.closed and road.work<=0 and not g.services.service_jobs.has(g.cursor) and target.cost>current.cost and target.get("bridge",false)==current.get("bridge",false)
 
 func hint() -> String:
-	if not g.event_notices.pending.is_empty(): return "Aviso de evento · A / Enter ir al lugar · B / Esc descartar"
 	var confirm="A" if g.last_pad else "Enter"
 	match g.TOOLS[g.tool].id:
 		"build_road":
@@ -128,7 +127,7 @@ func draw() -> void:
 	icon("chevron_down",Vector2(1198,734),v.GREEN,15)
 	g.ui_hits.append({"rect":selector,"action":"catalog"})
 	if hovered(selector): hover_hint="Catálogo de carreteras, puentes y señales · Y / V abrir"
-	var note=hint() if not g.event_notices.pending.is_empty() else (hover_hint if not hover_hint.is_empty() else hint())
+	var note=hover_hint if not hover_hint.is_empty() else hint()
 	var keys="LB/RB herramientas · View mapa · ☰ menú" if g.last_pad else "1–7 herramientas · 8 menú"
 	var width=g.font.get_string_size(keys,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x
 	v.text(Vector2(62,780),fit(note,minf(900,1130-width),12),12,v.MUTED)

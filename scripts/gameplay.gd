@@ -283,7 +283,8 @@ func car_reason(car: Dictionary) -> String:
 	var next = Vector2i(car.path[car.step+1])
 	if g.incidents.fire.has(next): return "Incendio por delante · Esperando desvío o bomberos"
 	if not g.road_open(next): return "Corte de carretera por delante"
-	if not g.incidents.signal_allows(next,next-p): return "Semáforo en rojo"
+	if not g.traffic.junctions.light_allows(car,next):
+		return "Semáforo en rojo" if car.get("blocked",false) else "Acercándose al semáforo en rojo"
 	if g.signage.has_movement_rules and not g.traffic.movement_allowed(car,p,next): return "Señal restrictiva · Esperando ruta alternativa"
 	if car.get("yielding",false): return "Parado en cruce · Cediendo el paso"
 	if car.get("blocked",false): return "Cola o capacidad agotada"

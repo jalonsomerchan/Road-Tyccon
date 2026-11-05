@@ -96,8 +96,6 @@ func button(index: int) -> void:
 				if g.title_confirm_new: g.title_confirm_new=false;g.menu_focus.sync("title:new")
 			JOY_BUTTON_X: if not g.title_confirm_new: g.gameplay_ui.cycle_mode()
 		return
-	if index in [JOY_BUTTON_A,JOY_BUTTON_B] and not g.event_notices.pending.is_empty():
-		g.event_notices.respond(g.event_notices.pending[0].id,index==JOY_BUTTON_A);return
 	match index:
 		JOY_BUTTON_START: g.toggle_menu()
 		JOY_BUTTON_BACK: g.toggle_map()

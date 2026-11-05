@@ -631,7 +631,7 @@ func draw_panel() -> void:
 	g.ui_hits.clear()
 	rect(Rect2(0,0,1280,800),Color(0.03,0.08,0.06,0.86))
 	card(Rect2(128,92,1024,614))
-	var titles = {"catalog":"Construye tu red", "menu":"Tu región", "cities":"Ciudades", "map":"Mapa de la región", "stats":"Estadísticas", "accounts":"Contabilidad", "info":"Tu selección", "help":"Cómo jugar", "infrastructure":"Rotondas y semáforos", "signal":"Configurar semáforo","objectives":"Objetivos y progresión","network":"Gestión de la red","scenarios":"Escenarios y récords"}
+	var titles = {"notices":"Avisos e incidencias", "catalog":"Construye tu red", "menu":"Tu región", "cities":"Ciudades", "map":"Mapa de la región", "stats":"Estadísticas", "accounts":"Contabilidad", "info":"Tu selección", "help":"Cómo jugar", "infrastructure":"Rotondas y semáforos", "signal":"Configurar semáforo","objectives":"Objetivos y progresión","network":"Gestión de la red","scenarios":"Escenarios y récords"}
 	text(Vector2(156,132),titles.get(g.panel,"Entre Ciudades"),25,GREEN)
 	button(Rect2(1015,105,110,36),"Volver B","close")
 	match g.panel:
@@ -647,8 +647,10 @@ func draw_panel() -> void:
 			button(Rect2(360,592,180,40),"Cargar","load")
 			button(Rect2(554,592,180,40),"Ayuda · Y" if g.last_pad else "Ayuda · H","help")
 			button(Rect2(748,592,180,40),"Velocidad · "+str(g.SPEEDS[g.speed_index])+"×","speed")
+			button(Rect2(942,592,180,40),"Avisos · %d"%g.event_notices.pending.size(),"event:open")
 			text(Vector2(166,675),"Cruceta / stick elegir · A activar · X guardar · Y ayuda · B volver · ☰ cerrar · L3 pausa",14,MUTED)
 		"objectives","network","scenarios": g.gameplay_ui.draw_panel(self)
+		"notices": g.event_notices.draw_panel(self)
 		"catalog": draw_catalog()
 		"cities": draw_city_list()
 		"map": draw_region_map()
@@ -810,7 +812,7 @@ func draw_help() -> void:
 		"Catálogo → Señales. Gira con R / X y coloca o retira con Enter / A.",
 		"Zoom: LT / RT, rueda o + / −. LB / RB recorre las siete herramientas.",
 		"Mayús mover rápido · Espacio / L3 pausa · F velocidad · G / R3 siguiente ciudad.",
-		"I inspección · M / View mapa · 8 / F10 / ☰ menú · B / Esc cancelar.",
+		"F2 avisos · I inspección · M / View mapa · 8 / F10 / ☰ menú · B / Esc cancelar.",
 		"K objetivos · C inspeccionar coche · L capas · Ctrl+Z deshacer · Menú: Red y servicios."
 	]
 	for i in lines.size(): text(Vector2(166, 191 + i * 38), lines[i], 18, PAPER)
